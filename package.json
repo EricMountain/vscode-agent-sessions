@@ -1,0 +1,201 @@
+{
+  "name": "agent-sessions",
+  "displayName": "Agent Sessions",
+  "description": "Manage independent terminal sessions running interactive coding agents (Claude Code and others), surviving window reloads via tmux.",
+  "version": "0.1.0",
+  "publisher": "agent-sessions",
+  "private": true,
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "agentSessionsView",
+          "title": "Agent Sessions",
+          "icon": "media/icons/activity-bar.svg"
+        }
+      ]
+    },
+    "views": {
+      "agentSessionsView": [
+        {
+          "id": "agentSessions.list",
+          "name": "Sessions"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "agentSessions.list",
+        "contents": "No agent sessions yet.\n[New Agent Session](command:agentSessions.newSession)",
+        "when": "agentSessions.tmuxAvailable"
+      },
+      {
+        "view": "agentSessions.list",
+        "contents": "tmux was not found on PATH.\nAgent Sessions requires tmux to persist sessions across window reloads.\n[Check tmux path setting](command:workbench.action.openSettings?%22agentSessions.tmuxPath%22)",
+        "when": "!agentSessions.tmuxAvailable"
+      }
+    ],
+    "commands": [
+      {
+        "command": "agentSessions.newSession",
+        "title": "New Agent Session",
+        "icon": "$(add)",
+        "category": "Agent Sessions"
+      },
+      {
+        "command": "agentSessions.killSession",
+        "title": "Kill Session",
+        "icon": "$(trash)",
+        "category": "Agent Sessions"
+      },
+      {
+        "command": "agentSessions.killAll",
+        "title": "Kill All Agent Sessions",
+        "category": "Agent Sessions"
+      },
+      {
+        "command": "agentSessions.selectSession",
+        "title": "Open Agent Session",
+        "category": "Agent Sessions"
+      },
+      {
+        "command": "agentSessions.refresh",
+        "title": "Refresh Agent Sessions",
+        "icon": "$(refresh)",
+        "category": "Agent Sessions"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "agentSessions.newSession",
+          "when": "view == agentSessions.list && agentSessions.tmuxAvailable",
+          "group": "navigation@1"
+        },
+        {
+          "command": "agentSessions.refresh",
+          "when": "view == agentSessions.list",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "agentSessions.killSession",
+          "when": "view == agentSessions.list && viewItem == session",
+          "group": "inline"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "agentSessions.selectSession",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Agent Sessions",
+      "properties": {
+        "agentSessions.agents": {
+          "type": "array",
+          "default": [
+            {
+              "id": "claude-code",
+              "label": "Claude Code",
+              "command": "claude"
+            }
+          ],
+          "description": "Available agents that can be launched as sessions.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "label",
+              "command"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Stable identifier for this agent definition."
+              },
+              "label": {
+                "type": "string",
+                "description": "Display name used as a fallback session label."
+              },
+              "command": {
+                "type": "string",
+                "description": "Executable to launch."
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Arguments passed to the command."
+              },
+              "icon": {
+                "type": "string",
+                "description": "Codicon id used in the session list."
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Working directory. Defaults to the workspace root, else the home directory."
+              },
+              "env": {
+                "type": "object",
+                "description": "Additional environment variables for the agent process."
+              }
+            }
+          }
+        },
+        "agentSessions.followTerminalTitle": {
+          "type": "boolean",
+          "default": true,
+          "description": "Derive session labels from the agent's own terminal title (OSC 0/2). When disabled, sessions use a static \"<label> N\" name."
+        },
+        "agentSessions.confirmKill": {
+          "type": "boolean",
+          "default": false,
+          "description": "Ask for confirmation before killing a session."
+        },
+        "agentSessions.tmuxPath": {
+          "type": "string",
+          "default": "tmux",
+          "description": "Path to the tmux binary."
+        },
+        "agentSessions.pollIntervalMs": {
+          "type": "number",
+          "default": 1500,
+          "description": "How often (in milliseconds) to poll tmux for background session state and title changes."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js --production",
+    "watch": "node esbuild.js --watch",
+    "compile": "tsc -p . --noEmit",
+    "package": "npm run build && vsce package"
+  },
+  "dependencies": {
+    "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.9.2",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-serialize": "^0.14.0",
+    "@xterm/xterm": "^6.0.0",
+    "esbuild": "^0.28.1",
+    "typescript": "^5.5.0"
+  }
+}

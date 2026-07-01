@@ -1,0 +1,8 @@
+.tmp/
+node_modules/
+out/
+media/terminal/main.js
+media/terminal/main.js.map
+media/vendor/
+*.vsix
+.vscode-test/

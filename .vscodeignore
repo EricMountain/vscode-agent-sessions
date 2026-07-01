@@ -1,0 +1,29 @@
+.tmp/**
+.vscode/**
+.vscode-test/**
+.claude/**
+.git/**
+*.vsix
+src/**
+out/**/*.map
+media/terminal/*.map
+.gitignore
+.yarnrc
+esbuild.js
+tsconfig.json
+PLAN.md
+**/*.ts
+**/tsconfig.json
+**/.eslintrc*
+# node-pty ships Linux prebuilds under prebuilds/ but no darwin prebuild, so on
+# macOS `npm install` compiles build/Release/pty.node from source instead (it's
+# N-API/node-addon-api based, so this single binary loads fine across Node and
+# Electron ABIs). Keep the compiled binary + its spawn helper and the bundled
+# Linux prebuilds (so one .vsix serves both target platforms, per D5); drop
+# everything else (gyp/Makefile intermediates, C++ sources, Windows-only
+# deps/third_party).
+node_modules/@homebridge/node-pty-prebuilt-multiarch/build/*.*
+node_modules/@homebridge/node-pty-prebuilt-multiarch/build/node-addon-api/**
+node_modules/@homebridge/node-pty-prebuilt-multiarch/src/**
+node_modules/@homebridge/node-pty-prebuilt-multiarch/deps/**
+node_modules/@homebridge/node-pty-prebuilt-multiarch/third_party/**
