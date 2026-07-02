@@ -33,4 +33,5 @@ export interface ExtToWebviewMessage {
   type: "setActiveSession" | "data" | "clear" | "config";
   chunk?: string;
   fontFamily?: string;
+  fontSize?: number;
 }

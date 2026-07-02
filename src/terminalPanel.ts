@@ -5,6 +5,7 @@ import { ExtToWebviewMessage, WebviewToExtMessage } from "./types";
 
 const VIEW_TYPE = "agentSessions.terminal";
 const FALLBACK_FONT_FAMILY = "CaskaydiaCove Nerd Font, monospace";
+const FALLBACK_FONT_SIZE = 14;
 
 function resolveFontFamily(): string {
   const custom = vscode.workspace.getConfiguration("agentSessions").get<string>("fontFamily", "").trim();
@@ -22,6 +23,22 @@ function resolveFontFamily(): string {
     return editorFont;
   }
   return FALLBACK_FONT_FAMILY;
+}
+
+function resolveFontSize(): number {
+  const custom = vscode.workspace.getConfiguration("agentSessions").get<number>("fontSize", 0);
+  if (custom > 0) {
+    return custom;
+  }
+  const terminalSize = vscode.workspace.getConfiguration("terminal.integrated").get<number>("fontSize", 0);
+  if (terminalSize > 0) {
+    return terminalSize;
+  }
+  const editorSize = vscode.workspace.getConfiguration("editor").get<number>("fontSize", 0);
+  if (editorSize > 0) {
+    return editorSize;
+  }
+  return FALLBACK_FONT_SIZE;
 }
 
 export class TerminalPanel implements vscode.Disposable {
@@ -53,9 +70,12 @@ export class TerminalPanel implements vscode.Disposable {
         if (
           event.affectsConfiguration("agentSessions.fontFamily") ||
           event.affectsConfiguration("terminal.integrated.fontFamily") ||
-          event.affectsConfiguration("editor.fontFamily")
+          event.affectsConfiguration("editor.fontFamily") ||
+          event.affectsConfiguration("agentSessions.fontSize") ||
+          event.affectsConfiguration("terminal.integrated.fontSize") ||
+          event.affectsConfiguration("editor.fontSize")
         ) {
-          this.postMessage({ type: "config", fontFamily: resolveFontFamily() });
+          this.postMessage({ type: "config", fontFamily: resolveFontFamily(), fontSize: resolveFontSize() });
         }
       })
     );
@@ -121,7 +141,7 @@ export class TerminalPanel implements vscode.Disposable {
     switch (message.type) {
       case "ready":
         this.ready = true;
-        this.postMessage({ type: "config", fontFamily: resolveFontFamily() });
+        this.postMessage({ type: "config", fontFamily: resolveFontFamily(), fontSize: resolveFontSize() });
         if (this.sessionId) {
           this.activate(this.sessionId);
         } else {

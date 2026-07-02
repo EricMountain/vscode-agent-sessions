@@ -187,6 +187,11 @@
           "type": "string",
           "default": "",
           "description": "Font family for the terminal pane. When empty, inherits VS Code's terminal font (terminal.integrated.fontFamily), falling back to the editor font (editor.fontFamily), then \"CaskaydiaCove Nerd Font\" if neither is set."
+        },
+        "agentSessions.fontSize": {
+          "type": "number",
+          "default": 0,
+          "description": "Font size (in pixels) for the terminal pane. When 0, inherits VS Code's terminal font size (terminal.integrated.fontSize), falling back to the editor font size (editor.fontSize)."
         }
       }
     }

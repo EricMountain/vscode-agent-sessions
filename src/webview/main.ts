@@ -41,15 +41,24 @@ const resizeObserver = new ResizeObserver(() => {
 resizeObserver.observe(container);
 
 window.addEventListener("message", (event) => {
-  const message = event.data as { type: string; chunk?: string; fontFamily?: string };
+  const message = event.data as { type: string; chunk?: string; fontFamily?: string; fontSize?: number };
   switch (message.type) {
-    case "config":
+    case "config": {
+      let changed = false;
       if (message.fontFamily) {
         term.options.fontFamily = message.fontFamily;
+        changed = true;
+      }
+      if (message.fontSize) {
+        term.options.fontSize = message.fontSize;
+        changed = true;
+      }
+      if (changed) {
         fitAddon.fit();
         postResize();
       }
       break;
+    }
     case "setActiveSession":
       term.reset();
       fitAddon.fit();
