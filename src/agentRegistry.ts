@@ -3,7 +3,12 @@ import * as vscode from "vscode";
 import { AgentDefinition } from "./types";
 
 const DEFAULT_AGENTS: AgentDefinition[] = [
-  { id: "claude-code", label: "Claude Code", command: "claude" },
+  {
+    id: "claude-code",
+    label: "Claude Code",
+    command: "claude",
+    env: { CLAUDE_CODE_AUTO_CONNECT_IDE: "true" },
+  },
 ];
 
 export function getAgentDefinitions(): AgentDefinition[] {

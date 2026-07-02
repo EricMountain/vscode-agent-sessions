@@ -138,6 +138,32 @@ still a correctness bug (cursor/selection appearance), not just noise. Fixed
 by adding `'unsafe-inline'` to `style-src` — the documented, standard
 requirement for embedding xterm.js in a CSP'd webview.
 
+### Claude Code's IDE integration needs a nudge through tmux
+
+**Symptom:** Claude Code's native IDE integration (selection + active-file
+context sent on every prompt, `mcp__ide__getDiagnostics`) never activates
+for sessions launched by this extension, even with the official "Claude
+Code" VS Code extension installed and its `~/.claude/ide/<port>.lock`
+present.
+
+**Cause:** the CLI's auto-connect only fires when it detects it was
+launched inside VS Code's own integrated terminal (parent-process /
+terminal-program detection). Sessions here are `tmux new-session`
+children of the isolated `agent-sessions` tmux server, not of VS Code, so
+auto-detect silently fails — confirmed by `lsof`-ing a live session's PID
+and seeing no connection to the lock file's port.
+
+**Fix:** set `CLAUDE_CODE_AUTO_CONNECT_IDE=true` in the `claude-code`
+agent's `env` (`package.json`'s `agentSessions.agents` default). This
+forces a connection attempt regardless of ancestry. Confirmed empirically:
+a throwaway tmux session created with that env var opened a live
+`127.0.0.1:<lockfile port>` WebSocket connection within seconds of
+starting. Requires the lock file's `workspaceFolders` to include the
+session's cwd, which holds naturally since `TmuxServer.createSession`
+already launches with `-c <cwd>` matching the workspace. Other agent
+definitions don't need this var — it's a Claude Code CLI–specific escape
+hatch, not general tmux-launch behavior.
+
 ## Testing VS Code with Playwright
 
 ### The "temporarily disabled" banner is not workspace trust

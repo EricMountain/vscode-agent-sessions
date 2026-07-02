@@ -114,7 +114,10 @@
             {
               "id": "claude-code",
               "label": "Claude Code",
-              "command": "claude"
+              "command": "claude",
+              "env": {
+                "CLAUDE_CODE_AUTO_CONNECT_IDE": "true"
+              }
             }
           ],
           "description": "Available agents that can be launched as sessions.",

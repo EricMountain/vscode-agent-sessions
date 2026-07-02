@@ -6,3 +6,4 @@ media/terminal/main.js.map
 media/vendor/
 *.vsix
 .vscode-test/
+todo.md
