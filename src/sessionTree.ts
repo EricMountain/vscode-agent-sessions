@@ -8,7 +8,7 @@ export class SessionTreeItem extends vscode.TreeItem {
     super(session.displayName, vscode.TreeItemCollapsibleState.None);
     this.id = session.id;
     this.contextValue = "session";
-    this.description = session.status === "exited" ? "exited" : isActive ? "$(circle-small-filled)" : undefined;
+    this.description = session.status === "exited" ? "exited" : isActive ? "•" : undefined;
     this.tooltip = session.title || session.displayName;
     const agent = getAgentDefinition(session.agentId);
     this.iconPath = new vscode.ThemeIcon(agent?.icon ?? "terminal");
