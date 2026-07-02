@@ -3,7 +3,7 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: var(--vscode-panel-background, #1e1e1e);
+  background: var(--vscode-terminal-background, var(--vscode-panel-background, #1e1e1e));
   overflow: hidden;
 }
 

@@ -1,4 +1,4 @@
-import { Terminal } from "@xterm/xterm";
+import { Terminal, ITheme } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 
 interface VsCodeApi {
@@ -8,6 +8,51 @@ declare function acquireVsCodeApi(): VsCodeApi;
 
 const vscode = acquireVsCodeApi();
 
+// VS Code injects every theme color as a `--vscode-<colorId>` CSS custom
+// property on the webview body, and keeps it live-updated (including
+// toggling a vscode-light/vscode-dark/vscode-high-contrast class) whenever
+// the active color theme changes - including when it changes because the
+// user has VS Code set to follow the OS light/dark setting. Reading these
+// at runtime means the terminal's colors always match VS Code's current
+// theme without us needing to duplicate any theme/OS detection logic.
+function cssVar(name: string): string | undefined {
+  const value = getComputedStyle(document.body).getPropertyValue(name).trim();
+  return value.length > 0 ? value : undefined;
+}
+
+function buildXtermTheme(): ITheme {
+  const theme: ITheme = {};
+  const set = (key: keyof ITheme, cssName: string) => {
+    const value = cssVar(cssName);
+    if (value) {
+      (theme as Record<string, string>)[key] = value;
+    }
+  };
+  set("background", "--vscode-terminal-background");
+  set("foreground", "--vscode-terminal-foreground");
+  set("cursor", "--vscode-terminalCursor-foreground");
+  set("cursorAccent", "--vscode-terminalCursor-background");
+  set("selectionBackground", "--vscode-terminal-selectionBackground");
+  set("selectionForeground", "--vscode-terminal-selectionForeground");
+  set("black", "--vscode-terminal-ansiBlack");
+  set("red", "--vscode-terminal-ansiRed");
+  set("green", "--vscode-terminal-ansiGreen");
+  set("yellow", "--vscode-terminal-ansiYellow");
+  set("blue", "--vscode-terminal-ansiBlue");
+  set("magenta", "--vscode-terminal-ansiMagenta");
+  set("cyan", "--vscode-terminal-ansiCyan");
+  set("white", "--vscode-terminal-ansiWhite");
+  set("brightBlack", "--vscode-terminal-ansiBrightBlack");
+  set("brightRed", "--vscode-terminal-ansiBrightRed");
+  set("brightGreen", "--vscode-terminal-ansiBrightGreen");
+  set("brightYellow", "--vscode-terminal-ansiBrightYellow");
+  set("brightBlue", "--vscode-terminal-ansiBrightBlue");
+  set("brightMagenta", "--vscode-terminal-ansiBrightMagenta");
+  set("brightCyan", "--vscode-terminal-ansiBrightCyan");
+  set("brightWhite", "--vscode-terminal-ansiBrightWhite");
+  return theme;
+}
+
 const term = new Terminal({
   convertEol: false,
   cursorBlink: true,
@@ -15,9 +60,17 @@ const term = new Terminal({
   fontSize: 13,
   scrollback: 10000,
   allowProposedApi: true,
+  theme: buildXtermTheme(),
 });
 const fitAddon = new FitAddon();
 term.loadAddon(fitAddon);
+
+// VS Code toggles a class on <body> (vscode-light/vscode-dark/vscode-high-contrast)
+// in place when the active color theme changes, rather than reloading the
+// webview, so we watch for that to keep the terminal palette in sync live.
+new MutationObserver(() => {
+  term.options.theme = buildXtermTheme();
+}).observe(document.body, { attributes: true, attributeFilter: ["class"] });
 
 const container = document.getElementById("terminal")!;
 term.open(container);
