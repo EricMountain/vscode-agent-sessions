@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { AttachPty } from "./tmux/attachPty";
-import { TmuxServer } from "./tmux/tmuxServer";
 import { SessionStore } from "./sessionStore";
 import { ExtToWebviewMessage, WebviewToExtMessage } from "./types";
 
@@ -36,7 +35,6 @@ export class TerminalPanel implements vscode.Disposable {
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly tmux: TmuxServer,
     private readonly tmuxPath: string,
     private readonly store: SessionStore
   ) {
@@ -86,7 +84,7 @@ export class TerminalPanel implements vscode.Disposable {
     this.panel!.title = session.displayName;
 
     if (this.ready && needsActivate) {
-      void this.activate(sessionId);
+      this.activate(sessionId);
     }
   }
 
@@ -125,7 +123,7 @@ export class TerminalPanel implements vscode.Disposable {
         this.ready = true;
         this.postMessage({ type: "config", fontFamily: resolveFontFamily() });
         if (this.sessionId) {
-          void this.activate(this.sessionId);
+          this.activate(this.sessionId);
         } else {
           this.postMessage({ type: "clear" });
         }
@@ -145,18 +143,17 @@ export class TerminalPanel implements vscode.Disposable {
     }
   }
 
-  private async activate(sessionId: string): Promise<void> {
+  private activate(sessionId: string): void {
     const session = this.store.getSession(sessionId);
     if (!session || !this.panel) {
       return;
     }
-    const snapshot = await this.tmux.capturePane(session.tmuxName);
-    // Guard against a stale async response racing a fast session switch.
-    if (this.sessionId !== sessionId || !this.panel) {
-      return;
-    }
     this.teardownAttach();
 
+    // No capture-pane prefill here: tmux always fully repaints a newly
+    // attached client itself, so painting our own snapshot first just
+    // means the screen gets drawn twice in quick succession (snapshot,
+    // then tmux's own redraw) — visible as a brief flicker on switch.
     const attachPty = new AttachPty(this.tmuxPath, session.tmuxName, this.cols, this.rows);
     this.attachPty = attachPty;
     attachPty.onData((chunk) => {
@@ -170,7 +167,7 @@ export class TerminalPanel implements vscode.Disposable {
       }
     });
 
-    this.postMessage({ type: "setActiveSession", snapshot });
+    this.postMessage({ type: "setActiveSession" });
   }
 
   private teardownAttach(): void {

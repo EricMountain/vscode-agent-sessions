@@ -145,13 +145,4 @@ export class TmuxServer {
       // Already gone.
     }
   }
-
-  async capturePane(tmuxName: string, maxLines = 2000): Promise<string> {
-    try {
-      const { stdout } = await this.run(["capture-pane", "-p", "-e", "-t", tmuxName, "-S", `-${maxLines}`]);
-      return stdout;
-    } catch {
-      return "";
-    }
-  }
 }

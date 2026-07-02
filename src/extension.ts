@@ -38,7 +38,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     })
   );
 
-  const terminalPanel = new TerminalPanel(context, tmux, tmuxPath, store);
+  const terminalPanel = new TerminalPanel(context, tmuxPath, store);
   context.subscriptions.push(terminalPanel);
 
   registerCommands(context, store, terminalPanel);

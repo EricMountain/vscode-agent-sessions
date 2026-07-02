@@ -54,6 +54,31 @@ derive a stable creation-order ordinal for the `"<label> N"` fallback name)
 are all readable via `list-sessions -F` without ever attaching a client.
 Only the *active* session needs a real `attach-pty`.
 
+### Switching sessions flickered: drop the capture-pane prefill
+
+**Symptom:** the terminal pane visibly flickered every time the active
+session was switched.
+
+**Cause:** `TerminalPanel.activate()` used to grab a `capture-pane -p -e`
+snapshot and write it to the webview immediately (to avoid a blank screen
+while the new attach-pty spun up), then spawn the attach-pty. But tmux
+always sends a newly-attached client a full repaint of the pane's current
+screen regardless — confirmed empirically (see the escape-sequence dump in
+[testing.md](testing.md)'s standalone `attach-pty` technique: entering the
+alt screen, clearing, and redrawing, sent unconditionally on attach, not
+conditional on the underlying program using the alternate screen). So every
+switch painted the screen twice in quick succession — the manual snapshot,
+immediately followed by tmux's own redraw of the same content — which reads
+as a flicker even though the final content is identical.
+
+**Fix:** removed the `capture-pane` prefill entirely (and the now-dead
+`TmuxServer.capturePane()` method along with it). `setActiveSession` now
+just does `term.reset()` and waits for the attach-pty's own first data
+burst to paint the screen — one paint instead of two. The gap is a brief
+blank (dark, theme-colored) screen rather than a flash, and in practice
+tmux's attach + first redraw completes in well under the time it takes to
+notice.
+
 ## Packaging
 
 ### `.vscodeignore` almost shipped a broken extension

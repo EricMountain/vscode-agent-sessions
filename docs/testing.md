@@ -22,16 +22,21 @@ node -e '
     const agent = { id: "x", label: "X", command: "bash", args: ["-c", "echo hi; sleep 60"] };
     const { tmuxName } = await tmux.createSession(agent, process.cwd(), "ws1", 80, 24);
     console.log(await tmux.listSessions("ws1"));
-    console.log(await tmux.capturePane(tmuxName));
     await tmux.killSession(tmuxName);
   })();
 '
 ```
 
+`TmuxServer` itself has no way to dump a pane's contents (that method was
+removed along with the capture-pane snapshot prefill, see
+[learnings.md](learnings.md#switching-sessions-flickered-drop-the-capture-pane-prefill)) —
+for ad-hoc inspection during a test, just shell out directly:
+`tmux -L agent-sessions capture-pane -p -e -t <tmuxName>`.
+
 This is how the exit-race bug and the `remain-on-exit` fix were found and
 confirmed (see [learnings.md](learnings.md)) — including deliberately
 spawning agents that exit instantly or reference a nonexistent binary, and
-checking `list-sessions`/`capture-pane` afterwards.
+checking `list-sessions` (plus a manual `capture-pane`) afterwards.
 
 `node-pty` itself can be exercised the same way, spawning
 `tmux -L agent-sessions attach-session -t <name>` directly and checking

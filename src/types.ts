@@ -31,7 +31,6 @@ export interface WebviewToExtMessage {
 
 export interface ExtToWebviewMessage {
   type: "setActiveSession" | "data" | "clear" | "config";
-  snapshot?: string;
   chunk?: string;
   fontFamily?: string;
 }

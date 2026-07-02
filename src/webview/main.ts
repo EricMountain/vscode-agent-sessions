@@ -41,7 +41,7 @@ const resizeObserver = new ResizeObserver(() => {
 resizeObserver.observe(container);
 
 window.addEventListener("message", (event) => {
-  const message = event.data as { type: string; snapshot?: string; chunk?: string; fontFamily?: string };
+  const message = event.data as { type: string; chunk?: string; fontFamily?: string };
   switch (message.type) {
     case "config":
       if (message.fontFamily) {
@@ -52,9 +52,6 @@ window.addEventListener("message", (event) => {
       break;
     case "setActiveSession":
       term.reset();
-      if (message.snapshot) {
-        term.write(message.snapshot);
-      }
       fitAddon.fit();
       postResize();
       term.focus();

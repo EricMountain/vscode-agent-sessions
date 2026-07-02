@@ -103,7 +103,7 @@ set-option -g remain-on-exit on
 ## Webview protocol
 
 ```
-ext → webview:  { type: "setActiveSession", snapshot }   // term.reset() + write snapshot
+ext → webview:  { type: "setActiveSession" }               // term.reset(), then wait for live data
                 { type: "data", chunk }                    // live output
                 { type: "clear" }                           // no active session
                 { type: "config", fontFamily }              // font changed, live update
@@ -118,6 +118,9 @@ with the correct font before any content is shown) and again whenever
 `editor.fontFamily` changes while the panel is open — see
 `resolveFontFamily()` in `src/terminalPanel.ts` for the inheritance chain.
 
-`TerminalPanel.activate()` grabs a `capture-pane -p -e` snapshot before
-spawning the new attach-pty, so switching sessions doesn't show a blank
-screen while tmux redraws.
+`TerminalPanel.activate()` deliberately does **not** prefill a
+`capture-pane` snapshot before spawning the new attach-pty. tmux always
+fully repaints a newly attached client itself, so painting a manual
+snapshot first just means the screen is drawn twice in quick succession —
+visible as a brief flicker on every session switch. See
+[learnings.md](learnings.md#switching-sessions-flickered-drop-the-capture-pane-prefill).
