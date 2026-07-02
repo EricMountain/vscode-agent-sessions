@@ -2,6 +2,7 @@ import { Terminal, ITheme } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { WebglAddon } from "@xterm/addon-webgl";
+import { Unicode11Addon } from "@xterm/addon-unicode11";
 
 interface VsCodeApi {
   postMessage(message: unknown): void;
@@ -66,6 +67,13 @@ const term = new Terminal({
 });
 const fitAddon = new FitAddon();
 term.loadAddon(fitAddon);
+
+// xterm's built-in width table predates Unicode 9+, so it renders emoji and
+// wide CJK glyphs a column narrower than they actually draw - most visible
+// with the Nerd Font default, where those glyphs are common. This addon
+// swaps in an up-to-date wcwidth table.
+term.loadAddon(new Unicode11Addon());
+term.unicode.activeVersion = "11";
 
 // Cmd-click (macOS) / Ctrl-click (Windows, Linux) opens links, matching
 // iTerm/VS Code terminal convention. The addon's default handler uses
