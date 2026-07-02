@@ -1,4 +1,17 @@
+import * as os from "os";
+
 const MAX_LABEL_LENGTH = 40;
+
+// tmux's pane_title defaults to the machine hostname until the running
+// program emits an OSC title escape sequence. A freshly spawned agent CLI
+// often hasn't done that yet, so the "terminal title" we'd otherwise trust
+// is really just this unset default rather than a real title.
+const HOSTNAME = os.hostname();
+const SHORT_HOSTNAME = HOSTNAME.split(".")[0];
+
+function isDefaultHostnameTitle(title: string): boolean {
+  return title === HOSTNAME || title === SHORT_HOSTNAME;
+}
 
 // Strips ASCII control characters (including ESC-driven sequences already
 // stripped by the pty layer) and common spinner glyphs (Braille Patterns
@@ -28,7 +41,7 @@ export function computeDisplayName(
 ): string {
   if (followTerminalTitle) {
     const sanitized = sanitizeTitle(rawTitle);
-    if (sanitized) {
+    if (sanitized && !isDefaultHostnameTitle(sanitized)) {
       return sanitized;
     }
   }
