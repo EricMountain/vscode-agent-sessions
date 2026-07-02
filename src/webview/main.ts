@@ -25,17 +25,25 @@ function cssVar(name: string): string | undefined {
 
 function buildXtermTheme(): ITheme {
   const theme: ITheme = {};
-  const set = (key: keyof ITheme, cssName: string) => {
-    const value = cssVar(cssName);
-    if (value) {
-      (theme as Record<string, string>)[key] = value;
+  const set = (key: keyof ITheme, ...cssNames: string[]) => {
+    for (const cssName of cssNames) {
+      const value = cssVar(cssName);
+      if (value) {
+        (theme as Record<string, string>)[key] = value;
+        return;
+      }
     }
   };
-  set("background", "--vscode-terminal-background");
-  set("foreground", "--vscode-terminal-foreground");
-  set("cursor", "--vscode-terminalCursor-foreground");
-  set("cursorAccent", "--vscode-terminalCursor-background");
-  set("selectionBackground", "--vscode-terminal-selectionBackground");
+  // terminal.background/terminal.foreground have no theme-registry default -
+  // VS Code's real integrated terminal derives them at runtime from
+  // panel/editor colors instead, so most themes never emit these two CSS
+  // vars at all. Without a fallback here xterm silently keeps its own
+  // hardcoded black/near-white defaults regardless of the active theme.
+  set("background", "--vscode-terminal-background", "--vscode-panel-background", "--vscode-editor-background");
+  set("foreground", "--vscode-terminal-foreground", "--vscode-foreground", "--vscode-editor-foreground");
+  set("cursor", "--vscode-terminalCursor-foreground", "--vscode-terminal-foreground", "--vscode-foreground");
+  set("cursorAccent", "--vscode-terminalCursor-background", "--vscode-terminal-background", "--vscode-panel-background");
+  set("selectionBackground", "--vscode-terminal-selectionBackground", "--vscode-editor-selectionBackground");
   set("selectionForeground", "--vscode-terminal-selectionForeground");
   set("black", "--vscode-terminal-ansiBlack");
   set("red", "--vscode-terminal-ansiRed");
