@@ -164,6 +164,20 @@ already launches with `-c <cwd>` matching the workspace. Other agent
 definitions don't need this var — it's a Claude Code CLI–specific escape
 hatch, not general tmux-launch behavior.
 
+**Prerequisite, not just config:** the lock file (`~/.claude/ide/<port>.lock`)
+and the WebSocket/MCP server behind it are created by the official
+**Claude Code VS Code extension** (`anthropic.claude-code`) when *it*
+activates inside a VS Code window — this is not a VS Code core feature,
+and this repo's extension doesn't (and can't) provide it itself. Confirmed
+by inspecting the lock file's `pid` field: it matched `VSCODE_PID`, i.e.
+the extension host process, not anything spawned by tmux or this
+extension. Without that extension installed and active in the window,
+there is no lock file and nothing listening on any port —
+`CLAUDE_CODE_AUTO_CONNECT_IDE=true` then has nothing to connect to and is
+a silent no-op; the CLI just runs standalone with no IDE context, no
+error. `TmuxServer` never talks to this server directly — it only shapes
+the CLI's environment so the CLI's own client logic can find it.
+
 ## Testing VS Code with Playwright
 
 ### The "temporarily disabled" banner is not workspace trust
