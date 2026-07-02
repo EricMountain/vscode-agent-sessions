@@ -5,6 +5,11 @@
   "version": "0.1.0",
   "publisher": "agent-sessions",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EricMountain/vscode-multi-terminal.git"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -174,6 +179,11 @@
           "type": "number",
           "default": 1500,
           "description": "How often (in milliseconds) to poll tmux for background session state and title changes."
+        },
+        "agentSessions.fontFamily": {
+          "type": "string",
+          "default": "",
+          "description": "Font family for the terminal pane. When empty, inherits VS Code's terminal font (terminal.integrated.fontFamily), falling back to the editor font (editor.fontFamily), then \"CaskaydiaCove Nerd Font\" if neither is set."
         }
       }
     }

@@ -11,7 +11,7 @@ media/terminal/*.map
 .yarnrc
 esbuild.js
 tsconfig.json
-PLAN.md
+docs/**
 **/*.ts
 **/tsconfig.json
 **/.eslintrc*

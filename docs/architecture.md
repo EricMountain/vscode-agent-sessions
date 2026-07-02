@@ -106,10 +106,17 @@ set-option -g remain-on-exit on
 ext → webview:  { type: "setActiveSession", snapshot }   // term.reset() + write snapshot
                 { type: "data", chunk }                    // live output
                 { type: "clear" }                           // no active session
+                { type: "config", fontFamily }              // font changed, live update
 ext ← webview:  { type: "ready" }
                 { type: "input", data }
                 { type: "resize", cols, rows }
 ```
+
+`config` is sent once right after `ready` (so a freshly opened panel starts
+with the correct font before any content is shown) and again whenever
+`agentSessions.fontFamily`, `terminal.integrated.fontFamily`, or
+`editor.fontFamily` changes while the panel is open — see
+`resolveFontFamily()` in `src/terminalPanel.ts` for the inheritance chain.
 
 `TerminalPanel.activate()` grabs a `capture-pane -p -e` snapshot before
 spawning the new attach-pty, so switching sessions doesn't show a blank

@@ -11,7 +11,7 @@ const vscode = acquireVsCodeApi();
 const term = new Terminal({
   convertEol: false,
   cursorBlink: true,
-  fontFamily: "var(--vscode-editor-font-family, monospace)",
+  fontFamily: "monospace", // replaced once the "config" message arrives, see below
   fontSize: 13,
   scrollback: 10000,
   allowProposedApi: true,
@@ -41,8 +41,15 @@ const resizeObserver = new ResizeObserver(() => {
 resizeObserver.observe(container);
 
 window.addEventListener("message", (event) => {
-  const message = event.data as { type: string; snapshot?: string; chunk?: string };
+  const message = event.data as { type: string; snapshot?: string; chunk?: string; fontFamily?: string };
   switch (message.type) {
+    case "config":
+      if (message.fontFamily) {
+        term.options.fontFamily = message.fontFamily;
+        fitAddon.fit();
+        postResize();
+      }
+      break;
     case "setActiveSession":
       term.reset();
       if (message.snapshot) {

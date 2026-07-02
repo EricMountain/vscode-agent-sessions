@@ -5,6 +5,25 @@ import { SessionStore } from "./sessionStore";
 import { ExtToWebviewMessage, WebviewToExtMessage } from "./types";
 
 const VIEW_TYPE = "agentSessions.terminal";
+const FALLBACK_FONT_FAMILY = "CaskaydiaCove Nerd Font, monospace";
+
+function resolveFontFamily(): string {
+  const custom = vscode.workspace.getConfiguration("agentSessions").get<string>("fontFamily", "").trim();
+  if (custom) {
+    return custom;
+  }
+  // terminal.integrated.fontFamily itself defaults to "" (inherit editor.fontFamily),
+  // so mirror that fallback chain here.
+  const terminalFont = vscode.workspace.getConfiguration("terminal.integrated").get<string>("fontFamily", "").trim();
+  if (terminalFont) {
+    return terminalFont;
+  }
+  const editorFont = vscode.workspace.getConfiguration("editor").get<string>("fontFamily", "").trim();
+  if (editorFont) {
+    return editorFont;
+  }
+  return FALLBACK_FONT_FAMILY;
+}
 
 export class TerminalPanel implements vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
@@ -28,6 +47,17 @@ export class TerminalPanel implements vscode.Disposable {
           // Active session disappeared (killed/exited elsewhere); promote or clear.
           const next = store.getSessions()[0];
           store.setActive(next?.id);
+        }
+      })
+    );
+    this.disposables.push(
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        if (
+          event.affectsConfiguration("agentSessions.fontFamily") ||
+          event.affectsConfiguration("terminal.integrated.fontFamily") ||
+          event.affectsConfiguration("editor.fontFamily")
+        ) {
+          this.postMessage({ type: "config", fontFamily: resolveFontFamily() });
         }
       })
     );
@@ -93,6 +123,7 @@ export class TerminalPanel implements vscode.Disposable {
     switch (message.type) {
       case "ready":
         this.ready = true;
+        this.postMessage({ type: "config", fontFamily: resolveFontFamily() });
         if (this.sessionId) {
           void this.activate(this.sessionId);
         } else {
