@@ -160,6 +160,11 @@ export class TerminalPanel implements vscode.Disposable {
           this.attachPty?.resize(message.cols, message.rows);
         }
         break;
+      case "openLink":
+        if (message.uri) {
+          void vscode.env.openExternal(vscode.Uri.parse(message.uri));
+        }
+        break;
     }
   }
 

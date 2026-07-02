@@ -1,5 +1,6 @@
 import { Terminal, ITheme } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
+import { WebLinksAddon } from "@xterm/addon-web-links";
 
 interface VsCodeApi {
   postMessage(message: unknown): void;
@@ -64,6 +65,20 @@ const term = new Terminal({
 });
 const fitAddon = new FitAddon();
 term.loadAddon(fitAddon);
+
+// Cmd-click (macOS) / Ctrl-click (Windows, Linux) opens links, matching
+// iTerm/VS Code terminal convention. The addon's default handler uses
+// window.open(), which doesn't work from inside a webview iframe, so we
+// route through the extension host instead.
+const isMac = navigator.userAgent.includes("Macintosh");
+term.loadAddon(
+  new WebLinksAddon((event, uri) => {
+    if (isMac ? !event.metaKey : !event.ctrlKey) {
+      return;
+    }
+    vscode.postMessage({ type: "openLink", uri });
+  })
+);
 
 // VS Code toggles a class on <body> (vscode-light/vscode-dark/vscode-high-contrast)
 // in place when the active color theme changes, rather than reloading the

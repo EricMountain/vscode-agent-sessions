@@ -23,10 +23,11 @@ export interface SessionState {
 }
 
 export interface WebviewToExtMessage {
-  type: "ready" | "input" | "resize";
+  type: "ready" | "input" | "resize" | "openLink";
   data?: string;
   cols?: number;
   rows?: number;
+  uri?: string;
 }
 
 export interface ExtToWebviewMessage {
