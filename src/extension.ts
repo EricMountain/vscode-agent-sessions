@@ -34,6 +34,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     })
   );
 
+  // The tree's own "active" marker (SessionTreeItem's description) updates
+  // whenever the model changes, but VS Code's selection highlight does not
+  // follow it automatically (e.g. right after creating a session). Keep the
+  // visible selection in sync with the active session.
+  context.subscriptions.push(
+    store.onDidChangeActive((id) => {
+      if (!id) {
+        return;
+      }
+      const item = treeProvider.getChildren().find((entry) => entry.session.id === id);
+      if (item) {
+        void treeView.reveal(item, { select: true, focus: false }).then(undefined, () => undefined);
+      }
+    })
+  );
+
   // The webview loses DOM focus whenever the OS window itself loses focus,
   // and VS Code does not restore it on refocus. Remember whether the
   // terminal panel was the active one so we can re-reveal it with focus.

@@ -33,6 +33,11 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<SessionTreeI
     return element;
   }
 
+  getParent(): undefined {
+    // Flat list: every session is a root element.
+    return undefined;
+  }
+
   getChildren(): SessionTreeItem[] {
     const activeId = this.store.getActiveId();
     return this.store.getSessions().map((session) => new SessionTreeItem(session, session.id === activeId));
