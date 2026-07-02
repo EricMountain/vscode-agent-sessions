@@ -135,9 +135,27 @@ function postResize(): void {
 fitAddon.fit();
 postResize();
 
+// Returning to this tab after switching away fires a burst of resize events
+// as VS Code's layout settles (e.g. the sidebar opening alongside it briefly
+// shrinks the editor width) - including transient, wrong intermediate sizes,
+// not just a single jump straight to the final size. Acting on each one
+// resizes the tmux pane back and forth, and tmux fully repaints its screen
+// on every resize, which is what produces the flash on switch. Debouncing
+// to the last size in a burst means we only ever resize once, to the size
+// that actually sticks.
+let resizeDebounceHandle: number | undefined;
 const resizeObserver = new ResizeObserver(() => {
-  fitAddon.fit();
-  postResize();
+  if (resizeDebounceHandle !== undefined) {
+    window.clearTimeout(resizeDebounceHandle);
+  }
+  resizeDebounceHandle = window.setTimeout(() => {
+    resizeDebounceHandle = undefined;
+    if (container.clientWidth === 0 || container.clientHeight === 0) {
+      return;
+    }
+    fitAddon.fit();
+    postResize();
+  }, 75);
 });
 resizeObserver.observe(container);
 
@@ -176,6 +194,15 @@ window.addEventListener("message", (event) => {
       term.write("No active agent session. Select or start one from the Agent Sessions view.");
       break;
   }
+});
+
+// retainContextWhenHidden keeps the iframe alive but reparents it when the
+// tab is switched away and back, which drops DOM focus from xterm's hidden
+// helper textarea even though the tab/editor group itself is focused again.
+// Re-focus the terminal whenever this window (the webview's top-level frame)
+// actually regains browser focus.
+window.addEventListener("focus", () => {
+  term.focus();
 });
 
 vscode.postMessage({ type: "ready" });

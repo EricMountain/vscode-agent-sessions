@@ -113,7 +113,14 @@ export class TerminalPanel implements vscode.Disposable {
     const needsActivate = this.sessionId !== sessionId || !this.attachPty;
     this.sessionId = sessionId;
     this.ensurePanel();
-    this.panel!.reveal(this.panel!.viewColumn, true);
+    // Skip redundant reveals: calling reveal() while the panel is already
+    // the active tab still triggers a visible flash (and can knock focus
+    // back off the webview), which shows up when e.g. opening the Agent
+    // Sessions view in response to this panel regaining focus loops back
+    // here via the tree's onDidChangeVisibility handler.
+    if (!this.panel!.active) {
+      this.panel!.reveal(this.panel!.viewColumn, true);
+    }
     this.panel!.title = session.displayName;
 
     if (this.ready && needsActivate) {

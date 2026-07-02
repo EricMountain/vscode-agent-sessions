@@ -30,7 +30,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(terminalPanel);
   context.subscriptions.push(
     terminalPanel.onDidBecomeActive(() => {
-      void vscode.commands.executeCommand("workbench.view.extension.agentSessionsView", { preserveFocus: true });
+      if (!treeView.visible) {
+        void vscode.commands.executeCommand("workbench.view.extension.agentSessionsView", { preserveFocus: true });
+      }
     })
   );
 
