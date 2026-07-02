@@ -22,7 +22,12 @@ jobs:
   release:
     needs: test
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    # node-pty-prebuilt-multiarch ships no darwin prebuild; npm install must
+    # run on macOS so it compiles build/Release/pty.node from source. The
+    # Linux prebuilds are static files in the npm package and get bundled
+    # regardless of host OS, so building here still produces a VSIX that
+    # works on both platforms (see .vscodeignore).
+    runs-on: macos-latest
     permissions:
       contents: write
     steps:
