@@ -3,7 +3,7 @@ import { AttachPty } from "./tmux/attachPty";
 import { SessionStore } from "./sessionStore";
 import { ExtToWebviewMessage, WebviewToExtMessage } from "./types";
 
-const VIEW_TYPE = "agentSessions.terminal";
+export const VIEW_TYPE = "agentSessions.terminal";
 const FALLBACK_FONT_FAMILY = "CaskaydiaCove Nerd Font, monospace";
 const FALLBACK_FONT_SIZE = 14;
 
@@ -132,21 +132,71 @@ export class TerminalPanel implements vscode.Disposable {
     if (this.panel) {
       return;
     }
-    const mediaRoot = vscode.Uri.joinPath(this.context.extensionUri, "media", "terminal");
-    const vendorRoot = vscode.Uri.joinPath(this.context.extensionUri, "media", "vendor");
-    this.panel = vscode.window.createWebviewPanel(VIEW_TYPE, "Agent Session", vscode.ViewColumn.Active, {
+    // VS Code is supposed to hand a still-open panel back to us via the
+    // WebviewPanelSerializer (see adoptPanel) whenever one survives a
+    // restart, but that reconnection is unreliable specifically across an
+    // extension-host-only restart (crash, "Restart Extension Host") - VS
+    // Code doesn't always deliver the old activation's dispose in time
+    // (https://github.com/microsoft/vscode/issues/188257). By the time
+    // we're about to create a new panel, any pending adoption has already
+    // had its chance to claim one via adoptPanel and set this.panel, so
+    // anything still matching our view type here is a genuine leftover -
+    // close it rather than leave it as a dead, disconnected tab.
+    this.closeStrayTabs();
+    const panel = vscode.window.createWebviewPanel(VIEW_TYPE, "Agent Session", vscode.ViewColumn.Active, {
       enableScripts: true,
       retainContextWhenHidden: true,
-      localResourceRoots: [mediaRoot, vendorRoot],
+      localResourceRoots: this.localResourceRoots(),
     });
-    this.panel.webview.html = this.renderHtml(this.panel.webview, mediaRoot, vendorRoot);
+    this.wirePanel(panel);
+  }
 
-    this.panel.webview.onDidReceiveMessage(
+  private closeStrayTabs(): void {
+    const strayTabs = vscode.window.tabGroups.all
+      .flatMap((group) => group.tabs)
+      .filter((tab) => tab.input instanceof vscode.TabInputWebview && tab.input.viewType.includes(VIEW_TYPE));
+    if (strayTabs.length > 0) {
+      void vscode.window.tabGroups.close(strayTabs);
+    }
+  }
+
+  // Called when VS Code hands back a panel that was still open in the UI
+  // from a prior activation (e.g. after an extension host restart) via the
+  // WebviewPanelSerializer registered in extension.ts. Without this, a
+  // fresh activation would have no way to discover that panel and would
+  // always create a brand new one, leaving the old tab orphaned.
+  adoptPanel(panel: vscode.WebviewPanel): void {
+    if (this.panel) {
+      // We already have a live panel; the adopted one is a stray duplicate.
+      panel.dispose();
+      return;
+    }
+    panel.webview.options = {
+      enableScripts: true,
+      localResourceRoots: this.localResourceRoots(),
+    };
+    this.wirePanel(panel);
+  }
+
+  private localResourceRoots(): vscode.Uri[] {
+    return [
+      vscode.Uri.joinPath(this.context.extensionUri, "media", "terminal"),
+      vscode.Uri.joinPath(this.context.extensionUri, "media", "vendor"),
+    ];
+  }
+
+  private wirePanel(panel: vscode.WebviewPanel): void {
+    this.panel = panel;
+    const mediaRoot = vscode.Uri.joinPath(this.context.extensionUri, "media", "terminal");
+    const vendorRoot = vscode.Uri.joinPath(this.context.extensionUri, "media", "vendor");
+    panel.webview.html = this.renderHtml(panel.webview, mediaRoot, vendorRoot);
+
+    panel.webview.onDidReceiveMessage(
       (message: WebviewToExtMessage) => this.handleWebviewMessage(message),
       undefined,
       this.disposables
     );
-    this.panel.onDidDispose(
+    panel.onDidDispose(
       () => {
         this.teardownAttach();
         this.panel = undefined;
@@ -155,7 +205,7 @@ export class TerminalPanel implements vscode.Disposable {
       undefined,
       this.disposables
     );
-    this.panel.onDidChangeViewState(
+    panel.onDidChangeViewState(
       (event) => {
         if (event.webviewPanel.active) {
           this.onDidBecomeActiveEmitter.fire();

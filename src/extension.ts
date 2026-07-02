@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { registerCommands } from "./commands";
 import { SessionStore } from "./sessionStore";
 import { SessionTreeProvider } from "./sessionTree";
-import { TerminalPanel } from "./terminalPanel";
+import { TerminalPanel, VIEW_TYPE } from "./terminalPanel";
 import { TmuxServer } from "./tmux/tmuxServer";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -33,6 +33,30 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (!treeView.visible) {
         void vscode.commands.executeCommand("workbench.view.extension.agentSessionsView", { preserveFocus: true });
       }
+    })
+  );
+
+  // If a panel from this extension was still open when the extension host
+  // restarted (crash, "Restart Extension Host", etc.), VS Code hands it back
+  // here instead of leaving it orphaned while a fresh activation spins up a
+  // second tab. `storeReady` lets us wait for the session list to finish
+  // loading before deciding which session (if any) that panel should show.
+  let markStoreReady: () => void;
+  const storeReady = new Promise<void>((resolve) => {
+    markStoreReady = resolve;
+  });
+  context.subscriptions.push(
+    vscode.window.registerWebviewPanelSerializer(VIEW_TYPE, {
+      deserializeWebviewPanel: async (panel) => {
+        terminalPanel.adoptPanel(panel);
+        await storeReady;
+        const activeId = store.getActiveId();
+        if (activeId && store.getSession(activeId)) {
+          terminalPanel.show(activeId);
+        } else {
+          panel.dispose();
+        }
+      },
     })
   );
 
@@ -91,6 +115,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   if (available) {
     await store.start();
+  }
+  markStoreReady!();
+  if (available) {
     const activeId = store.getActiveId();
     if (activeId && store.getSession(activeId)) {
       terminalPanel.show(activeId);
