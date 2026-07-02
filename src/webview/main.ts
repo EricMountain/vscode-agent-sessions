@@ -1,6 +1,7 @@
 import { Terminal, ITheme } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
+import { WebglAddon } from "@xterm/addon-webgl";
 
 interface VsCodeApi {
   postMessage(message: unknown): void;
@@ -89,6 +90,22 @@ new MutationObserver(() => {
 
 const container = document.getElementById("terminal")!;
 term.open(container);
+
+// The default DOM renderer redraws every visible row as a DOM node, which
+// gets sluggish for scrolling once there's a lot of scrollback. WebGL
+// renders through a single canvas instead. It can lose its context (e.g.
+// GPU process crash), so fall back to the DOM renderer rather than leaving
+// the terminal unrendered.
+try {
+  const webglAddon = new WebglAddon();
+  webglAddon.onContextLoss(() => {
+    webglAddon.dispose();
+  });
+  term.loadAddon(webglAddon);
+} catch {
+  // WebGL unavailable; xterm falls back to its default DOM renderer.
+}
+
 fitAddon.fit();
 
 term.onData((data) => {
