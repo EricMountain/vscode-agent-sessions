@@ -94,7 +94,7 @@ export class TerminalPanel implements vscode.Disposable {
     }
     const mediaRoot = vscode.Uri.joinPath(this.context.extensionUri, "media", "terminal");
     const vendorRoot = vscode.Uri.joinPath(this.context.extensionUri, "media", "vendor");
-    this.panel = vscode.window.createWebviewPanel(VIEW_TYPE, "Agent Session", vscode.ViewColumn.Beside, {
+    this.panel = vscode.window.createWebviewPanel(VIEW_TYPE, "Agent Session", vscode.ViewColumn.Active, {
       enableScripts: true,
       retainContextWhenHidden: true,
       localResourceRoots: [mediaRoot, vendorRoot],
