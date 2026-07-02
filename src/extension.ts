@@ -25,6 +25,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     treeDataProvider: treeProvider,
   });
   context.subscriptions.push(treeView);
+
+  const terminalPanel = new TerminalPanel(context, tmuxPath, store);
+  context.subscriptions.push(terminalPanel);
+
+  // The webview loses DOM focus whenever the OS window itself loses focus,
+  // and VS Code does not restore it on refocus. Remember whether the
+  // terminal panel was the active one so we can re-reveal it with focus.
+  let terminalWasActiveOnBlur = false;
   context.subscriptions.push(
     treeView.onDidChangeVisibility((event) => {
       if (event.visible) {
@@ -34,12 +42,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.window.onDidChangeWindowState((state) => {
       if (state.focused) {
         void store.poller.poll();
+        if (terminalWasActiveOnBlur) {
+          terminalPanel.restoreFocus();
+        }
+      } else {
+        terminalWasActiveOnBlur = terminalPanel.isActive();
       }
     })
   );
-
-  const terminalPanel = new TerminalPanel(context, tmuxPath, store);
-  context.subscriptions.push(terminalPanel);
 
   registerCommands(context, store, terminalPanel);
 

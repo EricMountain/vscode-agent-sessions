@@ -81,6 +81,16 @@ export class TerminalPanel implements vscode.Disposable {
     );
   }
 
+  isActive(): boolean {
+    return this.panel?.active ?? false;
+  }
+
+  restoreFocus(): void {
+    if (this.panel) {
+      this.panel.reveal(this.panel.viewColumn, false);
+    }
+  }
+
   show(sessionId: string | undefined): void {
     if (!sessionId) {
       this.teardownAttach();
