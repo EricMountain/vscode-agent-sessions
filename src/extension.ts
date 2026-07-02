@@ -28,6 +28,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   const terminalPanel = new TerminalPanel(context, tmuxPath, store);
   context.subscriptions.push(terminalPanel);
+  context.subscriptions.push(
+    terminalPanel.onDidBecomeActive(() => {
+      void vscode.commands.executeCommand("workbench.view.extension.agentSessionsView", { preserveFocus: true });
+    })
+  );
 
   // The webview loses DOM focus whenever the OS window itself loses focus,
   // and VS Code does not restore it on refocus. Remember whether the

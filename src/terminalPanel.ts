@@ -49,12 +49,15 @@ export class TerminalPanel implements vscode.Disposable {
   private cols = 80;
   private rows = 24;
   private readonly disposables: vscode.Disposable[] = [];
+  private readonly onDidBecomeActiveEmitter = new vscode.EventEmitter<void>();
+  readonly onDidBecomeActive = this.onDidBecomeActiveEmitter.event;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly tmuxPath: string,
     private readonly store: SessionStore
   ) {
+    this.disposables.push(this.onDidBecomeActiveEmitter);
     this.disposables.push(store.onDidChangeActive((id) => this.show(id)));
     this.disposables.push(
       store.onDidChangeSessions(() => {
@@ -141,6 +144,15 @@ export class TerminalPanel implements vscode.Disposable {
         this.teardownAttach();
         this.panel = undefined;
         this.ready = false;
+      },
+      undefined,
+      this.disposables
+    );
+    this.panel.onDidChangeViewState(
+      (event) => {
+        if (event.webviewPanel.active) {
+          this.onDidBecomeActiveEmitter.fire();
+        }
       },
       undefined,
       this.disposables
