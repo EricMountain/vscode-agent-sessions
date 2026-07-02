@@ -203,7 +203,8 @@
     "build": "node esbuild.js --production",
     "watch": "node esbuild.js --watch",
     "compile": "tsc -p . --noEmit",
-    "package": "npm run build && vsce package"
+    "package": "npm run build && vsce package",
+    "release": "scripts/release.sh"
   },
   "dependencies": {
     "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1"
