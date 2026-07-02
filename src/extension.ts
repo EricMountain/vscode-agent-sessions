@@ -37,6 +37,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     treeView.onDidChangeVisibility((event) => {
       if (event.visible) {
         void store.poller.poll();
+        const activeId = store.getActiveId();
+        if (activeId && store.getSession(activeId)) {
+          terminalPanel.show(activeId);
+        }
       }
     }),
     vscode.window.onDidChangeWindowState((state) => {
