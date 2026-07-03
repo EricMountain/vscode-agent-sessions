@@ -35,12 +35,6 @@
         {
           "id": "agentSessions.list",
           "name": ""
-        },
-        {
-          "type": "webview",
-          "id": "agentSessions.newSessionButtons",
-          "name": "New Agent Session",
-          "when": "agentSessions.tmuxAvailable"
         }
       ]
     },
@@ -208,7 +202,7 @@
         "agentSessions.defaultAgentId": {
           "type": "string",
           "default": "claude-code",
-          "description": "Id of the agent (from agentSessions.agents) launched by the toolbar \"+\" button and the New Agent Session command. Pick a specific agent type from the buttons under the session list instead. Also settable via the \"Configure Agents\" UI."
+          "description": "Id of the agent (from agentSessions.agents) launched by the toolbar \"+\" button and the New Agent Session command. Pick a specific agent type instead via the \"New session\" rows at the bottom of the session list. Also settable via the \"Configure Agents\" UI."
         },
         "agentSessions.followTerminalTitle": {
           "type": "boolean",

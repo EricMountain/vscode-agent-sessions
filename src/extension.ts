@@ -1,8 +1,7 @@
 import * as vscode from "vscode";
 import { registerCommands } from "./commands";
-import { NewSessionButtonsProvider, NEW_SESSION_BUTTONS_VIEW_TYPE } from "./newSessionButtonsView";
 import { SessionStore } from "./sessionStore";
-import { SessionTreeProvider } from "./sessionTree";
+import { SessionTreeItem, SessionTreeProvider } from "./sessionTree";
 import { TerminalPanel, VIEW_TYPE } from "./terminalPanel";
 import { TmuxServer } from "./tmux/tmuxServer";
 
@@ -23,17 +22,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const store = new SessionStore(tmux, context);
   context.subscriptions.push(store);
 
-  const treeProvider = new SessionTreeProvider(store);
+  const treeProvider = new SessionTreeProvider(store, available);
   const treeView = vscode.window.createTreeView("agentSessions.list", {
     treeDataProvider: treeProvider,
   });
   context.subscriptions.push(treeView);
-
-  const newSessionButtonsProvider = new NewSessionButtonsProvider(context);
-  context.subscriptions.push(newSessionButtonsProvider);
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(NEW_SESSION_BUTTONS_VIEW_TYPE, newSessionButtonsProvider)
-  );
 
   const terminalPanel = new TerminalPanel(context, tmuxPath, store);
   context.subscriptions.push(terminalPanel);
@@ -78,7 +71,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (!id) {
         return;
       }
-      const item = treeProvider.getChildren().find((entry) => entry.session.id === id);
+      const item = treeProvider.getChildren().find((entry) => entry instanceof SessionTreeItem && entry.session.id === id);
       if (item) {
         void treeView.reveal(item, { select: true, focus: false }).then(undefined, () => undefined);
       }
@@ -121,7 +114,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
       if (event.affectsConfiguration("agentSessions.agents") || event.affectsConfiguration("agentSessions.defaultAgentId")) {
         treeProvider.refresh();
-        void newSessionButtonsProvider.refresh();
       }
     })
   );

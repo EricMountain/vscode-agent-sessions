@@ -38,24 +38,6 @@ export interface ExtToWebviewMessage {
   fontSize?: number;
 }
 
-export interface AgentButtonSummary {
-  id: string;
-  label: string;
-  icon?: string;
-  iconDataUri?: string;
-}
-
-export type ButtonsToWebviewMessage = {
-  type: "agents";
-  agents: AgentButtonSummary[];
-  defaultAgentId: string;
-};
-
-export type ButtonsFromWebviewMessage =
-  | { type: "ready" }
-  | { type: "newSession"; agentId: string }
-  | { type: "configureAgents" };
-
 export type ConfigToWebviewMessage =
   | { type: "load"; agents: AgentDefinition[]; defaultAgentId: string; iconPreviews: Record<string, string> }
   | { type: "iconPicked"; index: number; iconPath: string; dataUri?: string }

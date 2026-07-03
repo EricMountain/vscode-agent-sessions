@@ -7,7 +7,6 @@
 src/**
 out/**/*.map
 media/terminal/*.map
-media/buttons/*.map
 media/config/*.map
 .gitignore
 .yarnrc

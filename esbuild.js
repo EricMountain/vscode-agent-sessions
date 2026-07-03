@@ -68,19 +68,6 @@ async function main() {
     plugins: [problemMatcherPlugin],
   });
 
-  const buttonsCtx = await esbuild.context({
-    entryPoints: ["src/webview/buttonsMain.ts"],
-    bundle: true,
-    format: "iife",
-    minify: production,
-    sourcemap: !production,
-    sourcesContent: false,
-    platform: "browser",
-    outfile: "media/buttons/main.js",
-    logLevel: "silent",
-    plugins: [problemMatcherPlugin],
-  });
-
   const configCtx = await esbuild.context({
     entryPoints: ["src/webview/configMain.ts"],
     bundle: true,
@@ -94,7 +81,7 @@ async function main() {
     plugins: [problemMatcherPlugin],
   });
 
-  const contexts = [extensionCtx, webviewCtx, buttonsCtx, configCtx];
+  const contexts = [extensionCtx, webviewCtx, configCtx];
 
   if (watch) {
     await Promise.all(contexts.map((ctx) => ctx.watch()));
