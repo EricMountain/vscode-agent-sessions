@@ -9,26 +9,26 @@ const DEFAULT_AGENTS: AgentDefinition[] = [
     id: "claude-code",
     label: "Claude Code",
     command: "claude",
-    icon: "terminal",
+    icon: "claude",
     env: { CLAUDE_CODE_AUTO_CONNECT_IDE: "true" },
   },
   {
     id: "codex",
     label: "Codex",
     command: "codex",
-    icon: "rocket",
+    icon: "agent",
   },
   {
     id: "opencode",
     label: "opencode",
     command: "opencode",
-    icon: "circuit-board",
+    icon: "agent",
   },
   {
     id: "pi",
     label: "pi",
     command: "pi",
-    icon: "beaker",
+    icon: "agent",
   },
 ];
 

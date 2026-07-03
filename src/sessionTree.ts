@@ -39,7 +39,18 @@ export class NewSessionTreeItem extends vscode.TreeItem {
   }
 }
 
-export type AgentSessionsTreeItem = SessionTreeItem | NewSessionTreeItem;
+// TreeItem has no native separator widget (unlike QuickPickItemKind.Separator),
+// so fake a thin dividing line with an inert, unlabeled row between the real
+// sessions and the trailing "new session" rows.
+export class SeparatorTreeItem extends vscode.TreeItem {
+  constructor() {
+    super("──────────────────────────", vscode.TreeItemCollapsibleState.None);
+    this.id = "new-session-separator";
+    this.contextValue = "separator";
+  }
+}
+
+export type AgentSessionsTreeItem = SessionTreeItem | NewSessionTreeItem | SeparatorTreeItem;
 
 export class SessionTreeProvider implements vscode.TreeDataProvider<AgentSessionsTreeItem> {
   private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<void>();
@@ -71,7 +82,10 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<AgentSession
     const newSessionItems = getAgentDefinitions().map(
       (agent) => new NewSessionTreeItem(agent, agent.id === defaultAgentId)
     );
-    return [...sessionItems, ...newSessionItems];
+    if (sessionItems.length === 0 || newSessionItems.length === 0) {
+      return [...sessionItems, ...newSessionItems];
+    }
+    return [...sessionItems, new SeparatorTreeItem(), ...newSessionItems];
   }
 
   refresh(): void {
