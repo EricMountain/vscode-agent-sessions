@@ -185,6 +185,11 @@
           "default": 1500,
           "description": "How often (in milliseconds) to poll tmux for background session state and title changes."
         },
+        "agentSessions.tmuxFocusEvents": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable tmux's focus-events option for agent sessions, so agents running inside them (e.g. Claude Code) can detect whether the pane is focused. Applies only to this extension's own tmux server, not your ~/.tmux.conf."
+        },
         "agentSessions.fontFamily": {
           "type": "string",
           "default": "",

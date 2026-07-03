@@ -6,8 +6,10 @@ import { TerminalPanel, VIEW_TYPE } from "./terminalPanel";
 import { TmuxServer } from "./tmux/tmuxServer";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  const tmuxPath = vscode.workspace.getConfiguration("agentSessions").get<string>("tmuxPath", "tmux");
-  const tmux = new TmuxServer(tmuxPath, context.globalStorageUri.fsPath);
+  const config = vscode.workspace.getConfiguration("agentSessions");
+  const tmuxPath = config.get<string>("tmuxPath", "tmux");
+  const tmuxFocusEvents = config.get<boolean>("tmuxFocusEvents", true);
+  const tmux = new TmuxServer(tmuxPath, context.globalStorageUri.fsPath, tmuxFocusEvents);
 
   const available = await tmux.isAvailable();
   await vscode.commands.executeCommand("setContext", "agentSessions.tmuxAvailable", available);
