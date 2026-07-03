@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { getAgentDefinition } from "./agentRegistry";
+import { getAgentDefinition, resolveAgentTreeIcon } from "./agentRegistry";
 import { SessionStore } from "./sessionStore";
 import { SessionState } from "./types";
 
@@ -11,7 +11,7 @@ export class SessionTreeItem extends vscode.TreeItem {
     this.description = session.status === "exited" ? "exited" : isActive ? "•" : undefined;
     this.tooltip = session.title || session.displayName;
     const agent = getAgentDefinition(session.agentId);
-    this.iconPath = new vscode.ThemeIcon(agent?.icon ?? "terminal");
+    this.iconPath = agent ? resolveAgentTreeIcon(agent) : new vscode.ThemeIcon("terminal");
     this.command = {
       command: "agentSessions.selectSession",
       title: "Open Agent Session",
@@ -41,5 +41,9 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<SessionTreeI
   getChildren(): SessionTreeItem[] {
     const activeId = this.store.getActiveId();
     return this.store.getSessions().map((session) => new SessionTreeItem(session, session.id === activeId));
+  }
+
+  refresh(): void {
+    this.onDidChangeTreeDataEmitter.fire();
   }
 }

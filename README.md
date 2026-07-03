@@ -16,19 +16,25 @@ often as you like, the agents keep running and reattach automatically.
 
 ## Features
 
-- **New Agent Session** — launch one or more configured agent CLIs (default:
-  `claude`, i.e. Claude Code), each in its own tmux session.
+- **New Agent Session** — launch one of several configured agent CLIs
+  (defaults: Claude Code, Codex, opencode, pi), each in its own tmux session.
+- **Pick the agent type per session** — buttons under the session list (one
+  per configured agent) launch that specific agent; the toolbar "+" always
+  launches the configured default agent.
 - **Persistent across reloads** — sessions live in a tmux server independent
   of the extension host; the previously active session reattaches
   automatically on activation.
 - **Live session list** — a tree view in the Activity Bar showing every
-  running session, labeled from the agent's own terminal title, with exit
-  detection and one-click kill.
+  running session, labeled from the agent's own terminal title, with a
+  per-agent icon, exit detection, and one-click kill.
 - **Integrated terminal panel** — a reused webview tab (via `xterm.js`)
   renders the active session's live output and forwards your input/resize
   back to tmux.
-- **Configurable agents** — point `agentSessions.agents` at any CLI, with
-  custom args, working directory, and environment variables.
+- **Configurable agents, with a UI** — the gear icon ("Configure Agents")
+  opens an editor for the agent list: id, label, command, args, working
+  directory, environment variables, an icon (built-in codicon or a custom
+  image), and which one is the default — no hand-editing `settings.json`
+  required, though that still works too.
 
 ## Requirements
 
@@ -36,16 +42,18 @@ often as you like, the agents keep running and reattach automatically.
 - [tmux](https://github.com/tmux/tmux) reachable on `PATH` (or point
   `agentSessions.tmuxPath` at it). The extension checks `tmux -V` on
   activation and disables "New Agent Session" with an error if it's missing.
-- At least one agent CLI installed and on `PATH` — defaults to `claude`
-  (Claude Code).
+- At least one agent CLI installed and on `PATH` — defaults include `claude`
+  (Claude Code), `codex`, `opencode`, and `pi`; only the ones you actually
+  have installed matter, and unwanted defaults can be removed via Configure
+  Agents.
 
 ## Getting started
 
 1. Install the extension and make sure `tmux` is on `PATH`.
 2. Open the **Agent Sessions** icon in the Activity Bar.
-3. Click **New Agent Session** (or run `Agent Sessions: New Agent Session`
-   from the Command Palette). If more than one agent is configured, you'll
-   be prompted to pick one.
+3. Under **New Agent Session**, click the button for the agent type you want
+   (or the toolbar "+", which always launches the configured default agent;
+   or run `Agent Sessions: New Agent Session` from the Command Palette).
 4. The session opens in the terminal panel and appears in the list. Switch
    between sessions by selecting them in the tree; kill one with the trash
    icon, or all of them via `Agent Sessions: Kill All Agent Sessions`.
@@ -56,12 +64,17 @@ there.
 
 ## Configuration
 
-All settings live under `agentSessions.*` (Settings UI → search "Agent
-Sessions", or edit `settings.json` directly):
+The friendliest way to edit these is the **Configure Agents** command (gear
+icon on the Agent Sessions view, or `Agent Sessions: Configure Agents` from
+the Command Palette) — an in-editor form for the agent list and the default
+agent, instead of hand-editing JSON. Everything is still backed by regular
+settings under `agentSessions.*` (Settings UI → search "Agent Sessions", or
+edit `settings.json` directly):
 
 | Setting | Default | Notes |
 |---|---|---|
-| `agentSessions.agents` | `[{ id: "claude-code", label: "Claude Code", command: "claude" }]` | Array of `{ id, label, command, args?, icon?, cwd?, env? }`. More than one entry adds a QuickPick to "New Agent Session". |
+| `agentSessions.agents` | Claude Code, Codex, opencode, pi | Array of `{ id, label, command, args?, icon?, iconPath?, cwd?, env? }`. `icon` is a codicon id (e.g. `"terminal"`, `"rocket"`); `iconPath` (absolute, `~`-relative, or workspace-relative path to an svg/png/etc.) overrides it with a custom image. |
+| `agentSessions.defaultAgentId` | `"claude-code"` | Id of the agent launched by the toolbar "+" and by `New Agent Session` when invoked with no explicit agent. Pick a specific type instead via the buttons under the session list. |
 | `agentSessions.followTerminalTitle` | `true` | Derive the session label from the agent's own terminal title (OSC 0/2) instead of a static `"<label> N"` name. |
 | `agentSessions.confirmKill` | `false` | Ask before killing a single session. `Kill All Agent Sessions` always confirms via a modal, regardless of this setting. |
 | `agentSessions.tmuxPath` | `"tmux"` | Path to the tmux binary, if not on `PATH`. |

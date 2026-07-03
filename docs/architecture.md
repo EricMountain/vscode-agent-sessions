@@ -41,7 +41,9 @@ Activity Bar (TreeView)          Editor area (one reused webview tab)
 | File | Responsibility |
 |---|---|
 | `src/extension.ts` | `activate()`: check tmux, build the store/tree/panel, reattach the previously-active session. `deactivate()` is an intentional no-op. |
-| `src/agentRegistry.ts` | Reads `agentSessions.agents`, resolves a session's working directory. |
+| `src/agentRegistry.ts` | Reads/writes `agentSessions.agents` and `agentSessions.defaultAgentId`, resolves a session's working directory and icon (codicon or custom image, as a native `iconPath` or a webview data URI). |
+| `src/agentsConfigPanel.ts` | The "Configure Agents" `WebviewPanel` (singleton) — form-based editor for the agent list and default agent, backed by the same config-update helpers in `agentRegistry.ts`. |
+| `src/newSessionButtonsView.ts` | `WebviewViewProvider` for the `agentSessions.newSessionButtons` view: one button per configured agent, docked under the session tree. |
 | `src/naming.ts` | Turns a raw tmux pane title into a sanitized display name, with an ordinal fallback. |
 | `src/tmux/tmuxServer.ts` | Thin wrapper over the `tmux -L agent-sessions` CLI: create/list/kill/capture. Owns the bootstrap config file (see below). |
 | `src/tmux/poller.ts` | Polls `list-sessions` on an interval (default 1.5s, plus on focus/visibility) and emits `SessionState[]` only when something actually changed. |
@@ -50,6 +52,8 @@ Activity Bar (TreeView)          Editor area (one reused webview tab)
 | `src/sessionTree.ts` | `TreeDataProvider` for the `agentSessions.list` view. |
 | `src/terminalPanel.ts` | The single reused `WebviewPanel` + its ext↔webview protocol. |
 | `src/webview/main.ts` | Browser-side: xterm.js + fit addon, posts `input`/`resize`, renders `data`/`setActiveSession`/`clear`. |
+| `src/webview/buttonsMain.ts` | Browser-side for the new-session buttons view: renders one button per agent (with codicon or custom-image icon) and a "Configure agents…" link. |
+| `src/webview/configMain.ts` | Browser-side for the Configure Agents panel: renders/edits agent cards, posts `save`/`pickCwd`/`pickIcon`/`resetDefaults`. |
 
 ## tmux session model
 

@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { registerCommands } from "./commands";
+import { NewSessionButtonsProvider, NEW_SESSION_BUTTONS_VIEW_TYPE } from "./newSessionButtonsView";
 import { SessionStore } from "./sessionStore";
 import { SessionTreeProvider } from "./sessionTree";
 import { TerminalPanel, VIEW_TYPE } from "./terminalPanel";
@@ -27,6 +28,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     treeDataProvider: treeProvider,
   });
   context.subscriptions.push(treeView);
+
+  const newSessionButtonsProvider = new NewSessionButtonsProvider(context);
+  context.subscriptions.push(newSessionButtonsProvider);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(NEW_SESSION_BUTTONS_VIEW_TYPE, newSessionButtonsProvider)
+  );
 
   const terminalPanel = new TerminalPanel(context, tmuxPath, store);
   context.subscriptions.push(terminalPanel);
@@ -111,6 +118,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (event.affectsConfiguration("agentSessions.pollIntervalMs")) {
         const intervalMs = vscode.workspace.getConfiguration("agentSessions").get<number>("pollIntervalMs", 1500);
         store.poller.start(intervalMs);
+      }
+      if (event.affectsConfiguration("agentSessions.agents") || event.affectsConfiguration("agentSessions.defaultAgentId")) {
+        treeProvider.refresh();
+        void newSessionButtonsProvider.refresh();
       }
     })
   );
