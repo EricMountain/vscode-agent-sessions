@@ -13,6 +13,14 @@ function copyXtermCss() {
   fs.copyFileSync(src, path.join(destDir, "xterm.css"));
 }
 
+function copyCodicons() {
+  const srcDir = path.join(__dirname, "node_modules", "@vscode", "codicons", "dist");
+  const destDir = path.join(__dirname, "media", "vendor");
+  fs.mkdirSync(destDir, { recursive: true });
+  fs.copyFileSync(path.join(srcDir, "codicon.css"), path.join(destDir, "codicon.css"));
+  fs.copyFileSync(path.join(srcDir, "codicon.ttf"), path.join(destDir, "codicon.ttf"));
+}
+
 /** @type {import('esbuild').Plugin} */
 const problemMatcherPlugin = {
   name: "problem-matcher",
@@ -31,6 +39,7 @@ const problemMatcherPlugin = {
 
 async function main() {
   copyXtermCss();
+  copyCodicons();
 
   const extensionCtx = await esbuild.context({
     entryPoints: ["src/extension.ts"],
@@ -59,11 +68,26 @@ async function main() {
     plugins: [problemMatcherPlugin],
   });
 
+  const configCtx = await esbuild.context({
+    entryPoints: ["src/webview/configMain.ts"],
+    bundle: true,
+    format: "iife",
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    platform: "browser",
+    outfile: "media/config/main.js",
+    logLevel: "silent",
+    plugins: [problemMatcherPlugin],
+  });
+
+  const contexts = [extensionCtx, webviewCtx, configCtx];
+
   if (watch) {
-    await Promise.all([extensionCtx.watch(), webviewCtx.watch()]);
+    await Promise.all(contexts.map((ctx) => ctx.watch()));
   } else {
-    await Promise.all([extensionCtx.rebuild(), webviewCtx.rebuild()]);
-    await Promise.all([extensionCtx.dispose(), webviewCtx.dispose()]);
+    await Promise.all(contexts.map((ctx) => ctx.rebuild()));
+    await Promise.all(contexts.map((ctx) => ctx.dispose()));
   }
 }
 

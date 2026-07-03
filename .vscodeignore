@@ -7,6 +7,7 @@
 src/**
 out/**/*.map
 media/terminal/*.map
+media/config/*.map
 .gitignore
 .yarnrc
 esbuild.js

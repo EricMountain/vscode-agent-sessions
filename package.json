@@ -78,6 +78,12 @@
         "title": "Refresh Agent Sessions",
         "icon": "$(refresh)",
         "category": "Agent Sessions"
+      },
+      {
+        "command": "agentSessions.configureAgents",
+        "title": "Configure Agents",
+        "icon": "$(gear)",
+        "category": "Agent Sessions"
       }
     ],
     "menus": {
@@ -91,6 +97,11 @@
           "command": "agentSessions.refresh",
           "when": "view == agentSessions.list",
           "group": "navigation@2"
+        },
+        {
+          "command": "agentSessions.configureAgents",
+          "when": "view == agentSessions.list",
+          "group": "navigation@3"
         }
       ],
       "view/item/context": [
@@ -117,12 +128,31 @@
               "id": "claude-code",
               "label": "Claude Code",
               "command": "claude",
+              "icon": "claude",
               "env": {
                 "CLAUDE_CODE_AUTO_CONNECT_IDE": "true"
               }
+            },
+            {
+              "id": "codex",
+              "label": "Codex",
+              "command": "codex",
+              "icon": "agent"
+            },
+            {
+              "id": "opencode",
+              "label": "opencode",
+              "command": "opencode",
+              "icon": "agent"
+            },
+            {
+              "id": "pi",
+              "label": "pi",
+              "command": "pi",
+              "icon": "agent"
             }
           ],
-          "description": "Available agents that can be launched as sessions.",
+          "description": "Available agents that can be launched as sessions. Edit via the \"Configure Agents\" gear icon in the Agent Sessions view for a friendlier UI.",
           "items": {
             "type": "object",
             "required": [
@@ -152,7 +182,11 @@
               },
               "icon": {
                 "type": "string",
-                "description": "Codicon id used in the session list."
+                "description": "Codicon id used in the session list (e.g. \"terminal\", \"rocket\"). Ignored when iconPath is set."
+              },
+              "iconPath": {
+                "type": "string",
+                "description": "Absolute path (or path relative to the workspace root, \"~\" allowed) to a custom icon image (svg/png/etc.) shown instead of the codicon."
               },
               "cwd": {
                 "type": "string",
@@ -164,6 +198,11 @@
               }
             }
           }
+        },
+        "agentSessions.defaultAgentId": {
+          "type": "string",
+          "default": "claude-code",
+          "description": "Id of the agent (from agentSessions.agents) launched by the toolbar \"+\" button and the New Agent Session command. Pick a specific agent type instead via the \"New session\" rows at the bottom of the session list. Also settable via the \"Configure Agents\" UI."
         },
         "agentSessions.followTerminalTitle": {
           "type": "boolean",
@@ -184,6 +223,11 @@
           "type": "number",
           "default": 1500,
           "description": "How often (in milliseconds) to poll tmux for background session state and title changes."
+        },
+        "agentSessions.tmuxFocusEvents": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable tmux's focus-events option for agent sessions, so agents running inside them (e.g. Claude Code) can detect whether the pane is focused. Applies only to this extension's own tmux server, not your ~/.tmux.conf."
         },
         "agentSessions.fontFamily": {
           "type": "string",
@@ -212,6 +256,7 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.90.0",
+    "@vscode/codicons": "^0.0.45",
     "@vscode/vsce": "^3.9.2",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-serialize": "^0.14.0",

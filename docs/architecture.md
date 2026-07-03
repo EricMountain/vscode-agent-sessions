@@ -41,15 +41,31 @@ Activity Bar (TreeView)          Editor area (one reused webview tab)
 | File | Responsibility |
 |---|---|
 | `src/extension.ts` | `activate()`: check tmux, build the store/tree/panel, reattach the previously-active session. `deactivate()` is an intentional no-op. |
-| `src/agentRegistry.ts` | Reads `agentSessions.agents`, resolves a session's working directory. |
+| `src/agentRegistry.ts` | Reads/writes `agentSessions.agents` and `agentSessions.defaultAgentId`, resolves a session's working directory and icon (codicon or custom image, as a native `iconPath` or a webview data URI). |
+| `src/agentsConfigPanel.ts` | The "Configure Agents" `WebviewPanel` (singleton) — form-based editor for the agent list and default agent, backed by the same config-update helpers in `agentRegistry.ts`. |
 | `src/naming.ts` | Turns a raw tmux pane title into a sanitized display name, with an ordinal fallback. |
 | `src/tmux/tmuxServer.ts` | Thin wrapper over the `tmux -L agent-sessions` CLI: create/list/kill/capture. Owns the bootstrap config file (see below). |
 | `src/tmux/poller.ts` | Polls `list-sessions` on an interval (default 1.5s, plus on focus/visibility) and emits `SessionState[]` only when something actually changed. |
 | `src/tmux/attachPty.ts` | Wraps `node-pty` running `tmux attach-session -t <name>` for whichever session is currently active. Disposable — killing it only detaches the tmux client, the session keeps running. |
 | `src/sessionStore.ts` | In-host mirror of session state + the active-session pointer. Owns create/kill/killAll and the "exited session" grace-period auto-removal (see Lifecycle below). |
-| `src/sessionTree.ts` | `TreeDataProvider` for the `agentSessions.list` view. |
+| `src/sessionTree.ts` | `TreeDataProvider` for the `agentSessions.list` view. Appends a trailing `NewSessionTreeItem` per configured agent after the real `SessionTreeItem`s, so "start a new one" is always one click without a separate view — see below. |
 | `src/terminalPanel.ts` | The single reused `WebviewPanel` + its ext↔webview protocol. |
 | `src/webview/main.ts` | Browser-side: xterm.js + fit addon, posts `input`/`resize`, renders `data`/`setActiveSession`/`clear`. |
+| `src/webview/configMain.ts` | Browser-side for the Configure Agents panel: renders/edits agent cards, posts `save`/`pickCwd`/`pickIcon`/`resetDefaults`. |
+
+### New-session rows live in the same tree, not a separate view
+
+`SessionTreeProvider.getChildren()` returns the real sessions followed by one
+`NewSessionTreeItem` per agent from `agentRegistry.getAgentDefinitions()`
+(each just a `command: "agentSessions.newSession"` with that agent's id as
+the argument), plus a description marking the configured default. An earlier
+version tried a second `WebviewViewProvider` stacked under the tree for
+this, but that always cost a second collapsible section regardless of
+session count; appending to the same flat list means the rows simply shift
+down as sessions are added, and it's still a native `TreeItem` (icon,
+command, tooltip) with no webview involved. Suppressed entirely when tmux
+isn't available, so the existing "tmux not found" `viewsWelcome` still shows
+instead.
 
 ## tmux session model
 

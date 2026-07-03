@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
-import { getAgentDefinitions } from "./agentRegistry";
+import { AgentsConfigPanel } from "./agentsConfigPanel";
+import { getAgentDefinition, getDefaultAgentId } from "./agentRegistry";
 import { SessionStore } from "./sessionStore";
 import { SessionTreeItem } from "./sessionTree";
 import { TerminalPanel } from "./terminalPanel";
@@ -20,28 +21,21 @@ export function registerCommands(
   terminalPanel: TerminalPanel
 ): void {
   context.subscriptions.push(
-    vscode.commands.registerCommand("agentSessions.newSession", async () => {
-      const agents = getAgentDefinitions();
-      if (agents.length === 0) {
-        void vscode.window.showErrorMessage("No agents are configured. Add one via agentSessions.agents.");
+    vscode.commands.registerCommand("agentSessions.newSession", async (agentId?: string) => {
+      const resolvedId = agentId ?? getDefaultAgentId();
+      if (!resolvedId || !getAgentDefinition(resolvedId)) {
+        void vscode.window.showErrorMessage("No agents are configured. Add one via the \"Configure Agents\" gear icon.");
         return;
       }
-      let agentId = agents[0].id;
-      if (agents.length > 1) {
-        const pick = await vscode.window.showQuickPick(
-          agents.map((agent) => ({ label: agent.label, description: agent.command, agentId: agent.id })),
-          { placeHolder: "Select an agent to launch" }
-        );
-        if (!pick) {
-          return;
-        }
-        agentId = pick.agentId;
-      }
       try {
-        await store.createSession(agentId);
+        await store.createSession(resolvedId);
       } catch (error) {
         void vscode.window.showErrorMessage(`Failed to start agent session: ${(error as Error).message}`);
       }
+    }),
+
+    vscode.commands.registerCommand("agentSessions.configureAgents", () => {
+      AgentsConfigPanel.createOrShow(context);
     }),
 
     vscode.commands.registerCommand("agentSessions.selectSession", (id: string) => {

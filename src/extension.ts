@@ -1,13 +1,15 @@
 import * as vscode from "vscode";
 import { registerCommands } from "./commands";
 import { SessionStore } from "./sessionStore";
-import { SessionTreeProvider } from "./sessionTree";
+import { SessionTreeItem, SessionTreeProvider } from "./sessionTree";
 import { TerminalPanel, VIEW_TYPE } from "./terminalPanel";
 import { TmuxServer } from "./tmux/tmuxServer";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  const tmuxPath = vscode.workspace.getConfiguration("agentSessions").get<string>("tmuxPath", "tmux");
-  const tmux = new TmuxServer(tmuxPath, context.globalStorageUri.fsPath);
+  const config = vscode.workspace.getConfiguration("agentSessions");
+  const tmuxPath = config.get<string>("tmuxPath", "tmux");
+  const tmuxFocusEvents = config.get<boolean>("tmuxFocusEvents", true);
+  const tmux = new TmuxServer(tmuxPath, context.globalStorageUri.fsPath, tmuxFocusEvents);
 
   const available = await tmux.isAvailable();
   await vscode.commands.executeCommand("setContext", "agentSessions.tmuxAvailable", available);
@@ -20,7 +22,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const store = new SessionStore(tmux, context);
   context.subscriptions.push(store);
 
-  const treeProvider = new SessionTreeProvider(store);
+  const treeProvider = new SessionTreeProvider(store, available);
   const treeView = vscode.window.createTreeView("agentSessions.list", {
     treeDataProvider: treeProvider,
   });
@@ -69,7 +71,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (!id) {
         return;
       }
-      const item = treeProvider.getChildren().find((entry) => entry.session.id === id);
+      const item = treeProvider.getChildren().find((entry) => entry instanceof SessionTreeItem && entry.session.id === id);
       if (item) {
         void treeView.reveal(item, { select: true, focus: false }).then(undefined, () => undefined);
       }
@@ -109,6 +111,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (event.affectsConfiguration("agentSessions.pollIntervalMs")) {
         const intervalMs = vscode.workspace.getConfiguration("agentSessions").get<number>("pollIntervalMs", 1500);
         store.poller.start(intervalMs);
+      }
+      if (event.affectsConfiguration("agentSessions.agents") || event.affectsConfiguration("agentSessions.defaultAgentId")) {
+        treeProvider.refresh();
       }
     })
   );

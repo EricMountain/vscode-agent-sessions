@@ -1,0 +1,150 @@
+html,
+body {
+  margin: 0;
+  padding: 16px;
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  background: var(--vscode-editor-background);
+}
+
+button {
+  padding: 4px 12px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 4px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button.secondary {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+button.secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+button.danger {
+  background: transparent;
+  border-color: var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
+  color: var(--vscode-errorForeground);
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.toolbar.footer {
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+.agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agent-card {
+  border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+  border-radius: 6px;
+  padding: 12px;
+  background: var(--vscode-sideBar-background, transparent);
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.default-radio {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9em;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85em;
+  opacity: 0.9;
+}
+
+.field:has(textarea) {
+  grid-column: 1 / -1;
+}
+
+.field input[type="text"],
+.field textarea {
+  font-family: inherit;
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 3px;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.field textarea {
+  resize: vertical;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
+.cwd-row,
+.icon-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cwd-row input,
+.icon-row input {
+  flex: 1;
+}
+
+.icon-preview {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  line-height: 18px;
+  flex: none;
+}
+
+img.icon-preview {
+  object-fit: contain;
+}
+
+.empty {
+  opacity: 0.7;
+}

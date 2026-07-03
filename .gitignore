@@ -3,6 +3,8 @@ node_modules/
 out/
 media/terminal/main.js
 media/terminal/main.js.map
+media/config/main.js
+media/config/main.js.map
 media/vendor/
 *.vsix
 .vscode-test/
