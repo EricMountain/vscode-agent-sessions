@@ -1,6 +1,9 @@
 import * as os from "os";
 
-const MAX_LABEL_LENGTH = 40;
+// Generous cap purely to guard against a pathological OSC title flooding the
+// tree with an enormous string; actual visual truncation/ellipsis is handled
+// responsively by VS Code's own tree view based on the view's width.
+const MAX_LABEL_LENGTH = 200;
 
 // tmux's pane_title defaults to the machine hostname until the running
 // program emits an OSC title escape sequence. A freshly spawned agent CLI
@@ -25,12 +28,15 @@ export function sanitizeTitle(rawTitle: string | undefined): string {
   if (!rawTitle) {
     return "";
   }
-  return rawTitle
+  const cleaned = rawTitle
     .replace(CONTROL_CHARS, "")
     .replace(SPINNER_GLYPHS, "")
     .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, MAX_LABEL_LENGTH);
+    .trim();
+  if (cleaned.length <= MAX_LABEL_LENGTH) {
+    return cleaned;
+  }
+  return `${cleaned.slice(0, MAX_LABEL_LENGTH)}…`;
 }
 
 export function computeDisplayName(
