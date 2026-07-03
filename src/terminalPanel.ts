@@ -4,7 +4,7 @@ import { SessionStore } from "./sessionStore";
 import { ExtToWebviewMessage, WebviewToExtMessage } from "./types";
 
 export const VIEW_TYPE = "agentSessions.terminal";
-const FALLBACK_FONT_FAMILY = "CaskaydiaCove Nerd Font, monospace";
+const FALLBACK_FONT_FAMILY = "CaskaydiaCove Nerd Font Mono, monospace";
 const FALLBACK_FONT_SIZE = 14;
 
 function resolveFontFamily(): string {

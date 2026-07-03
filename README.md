@@ -81,7 +81,7 @@ edit `settings.json` directly):
 | `agentSessions.confirmKill` | `false` | Ask before killing a single session. `Kill All Agent Sessions` always confirms via a modal, regardless of this setting. |
 | `agentSessions.tmuxPath` | `"tmux"` | Path to the tmux binary, if not on `PATH`. |
 | `agentSessions.pollIntervalMs` | `1500` | Background poll interval for session state/title updates (also polls on window focus and when the view becomes visible). |
-| `agentSessions.fontFamily` | `""` | Terminal pane font. Empty inherits `terminal.integrated.fontFamily`, then `editor.fontFamily`, then falls back to `"CaskaydiaCove Nerd Font"`. Applies live — no reload needed. |
+| `agentSessions.fontFamily` | `""` | Terminal pane font. Empty inherits `terminal.integrated.fontFamily`, then `editor.fontFamily`, then falls back to `\"CaskaydiaCove Nerd Font Mono\"`. Applies live — no reload needed. |
 
 ## Uninstalling / cleaning up
 

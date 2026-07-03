@@ -232,7 +232,7 @@
         "agentSessions.fontFamily": {
           "type": "string",
           "default": "",
-          "description": "Font family for the terminal pane. When empty, inherits VS Code's terminal font (terminal.integrated.fontFamily), falling back to the editor font (editor.fontFamily), then \"CaskaydiaCove Nerd Font\" if neither is set."
+          "description": "Font family for the terminal pane. When empty, inherits VS Code's terminal font (terminal.integrated.fontFamily), falling back to the editor font (editor.fontFamily), then \"CaskaydiaCove Nerd Font Mono\" if neither is set."
         },
         "agentSessions.fontSize": {
           "type": "number",
