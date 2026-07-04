@@ -231,6 +231,7 @@
         },
         "agentSessions.tmuxMouse": {
           "type": "boolean",
+          "title": "Tmux Mouse Mode",
           "default": false,
           "description": "Enable tmux's mouse option for agent sessions, so the mouse wheel scrolls the pane and agents running inside them (e.g. Claude Code) don't show a hint about it being off. When enabled, click-drag in the terminal is captured for tmux/app mouse reporting instead of text selection; hold Shift while dragging to select and copy text. Applies only to this extension's own tmux server, not your ~/.tmux.conf."
         },
