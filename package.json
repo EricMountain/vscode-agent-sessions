@@ -1,5 +1,5 @@
 {
-  "name": "agent-sessions",
+  "name": "agent-terminal-sessions",
   "displayName": "Agent Sessions",
   "description": "Manage independent terminal sessions running interactive coding agents (Claude Code and others), surviving window reloads via tmux.",
   "version": "0.1.6",
