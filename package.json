@@ -2,7 +2,7 @@
   "name": "agent-terminal-sessions",
   "displayName": "Agent Terminal Sessions",
   "description": "Manage independent terminal sessions running interactive coding agents (Claude Code and others), surviving window reloads via tmux.",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "publisher": "agent-sessions",
   "private": true,
   "license": "MIT",
