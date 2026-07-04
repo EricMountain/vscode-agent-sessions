@@ -22,7 +22,16 @@ export function registerCommands(
 ): void {
   context.subscriptions.push(
     vscode.commands.registerCommand("agentSessions.newSession", async (agentId?: string) => {
-      const resolvedId = agentId ?? getDefaultAgentId();
+      let resolvedId = agentId ?? getDefaultAgentId();
+      if (!resolvedId || !getAgentDefinition(resolvedId)) {
+        // On a cold VS Code startup, the very first read of agentSessions.agents
+        // can briefly observe a stale config snapshot that self-corrects a
+        // moment later (the tree view re-renders fine once it does) — so a
+        // single failed lookup isn't proof there's really nothing configured.
+        // Give it one short beat to catch up before reporting the error.
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        resolvedId = agentId ?? getDefaultAgentId();
+      }
       if (!resolvedId || !getAgentDefinition(resolvedId)) {
         void vscode.window.showErrorMessage("No agents are configured. Add one via the \"Configure Agents\" gear icon.");
         return;
