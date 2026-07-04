@@ -3,8 +3,10 @@
 .vscode-test/**
 .claude/**
 .git/**
+.github/**
 *.vsix
 src/**
+scripts/**
 out/**/*.map
 media/terminal/*.map
 media/config/*.map
