@@ -25,8 +25,8 @@ iterating; see [building.md](building.md) for the watch script.
 ## Option B: install a packaged `.vsix`
 
 ```bash
-npm run package                                   # produces agent-sessions-0.1.0.vsix
-code --install-extension agent-sessions-0.1.0.vsix
+npm run package                                   # produces agent-terminal-sessions-0.1.0.vsix
+code --install-extension agent-terminal-sessions-0.1.0.vsix
 ```
 
 Then reload/restart VS Code. The Agent Sessions icon should appear in the
