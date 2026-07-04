@@ -9,7 +9,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const config = vscode.workspace.getConfiguration("agentSessions");
   const tmuxPath = config.get<string>("tmuxPath", "tmux");
   const tmuxFocusEvents = config.get<boolean>("tmuxFocusEvents", true);
-  const tmux = new TmuxServer(tmuxPath, context.globalStorageUri.fsPath, tmuxFocusEvents);
+  const tmuxMouse = config.get<boolean>("tmuxMouse", false);
+  const tmux = new TmuxServer(tmuxPath, context.globalStorageUri.fsPath, tmuxFocusEvents, tmuxMouse);
 
   const available = await tmux.isAvailable();
   await vscode.commands.executeCommand("setContext", "agentSessions.tmuxAvailable", available);

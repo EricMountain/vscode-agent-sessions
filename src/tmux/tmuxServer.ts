@@ -15,12 +15,13 @@ const FIELD_SEP = "\x1f";
 // immediately (bad command, wrong args) destroys itself before we can read
 // back its metadata or surface the failure, and a fast-exiting agent races
 // the `set-option` calls that tag a freshly created session.
-function bootstrapConfig(focusEvents: boolean): string {
+function bootstrapConfig(focusEvents: boolean, mouse: boolean): string {
   return [
     "set-option -g status off",
     "set-option -g history-limit 10000",
     "set-option -g remain-on-exit on",
     `set-option -g focus-events ${focusEvents ? "on" : "off"}`,
+    `set-option -g mouse ${mouse ? "on" : "off"}`,
     "",
   ].join("\n");
 }
@@ -56,10 +57,10 @@ function shellQuote(value: string): string {
 export class TmuxServer {
   private readonly configPath: string;
 
-  constructor(private tmuxPath: string, storageDir: string, focusEvents: boolean) {
+  constructor(private tmuxPath: string, storageDir: string, focusEvents: boolean, mouse: boolean) {
     fs.mkdirSync(storageDir, { recursive: true });
     this.configPath = path.join(storageDir, "tmux.conf");
-    fs.writeFileSync(this.configPath, bootstrapConfig(focusEvents), "utf8");
+    fs.writeFileSync(this.configPath, bootstrapConfig(focusEvents, mouse), "utf8");
   }
 
   private run(args: string[]): Promise<{ stdout: string; stderr: string }> {
