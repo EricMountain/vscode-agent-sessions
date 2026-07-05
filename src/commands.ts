@@ -22,14 +22,17 @@ export function registerCommands(
 ): void {
   context.subscriptions.push(
     vscode.commands.registerCommand("agentSessions.newSession", async (agentId?: string) => {
+      // vscode.workspace.getConfiguration() can occasionally return a stale
+      // read of agentSessions.agents/defaultAgentId for a single call — seen
+      // both on a cold VS Code startup and, less predictably, well into a
+      // running window — that self-corrects moments later on its own (the
+      // tree view's own rows are unaffected since they resolve their agent id
+      // at render time, not at click time). A single failed lookup isn't
+      // proof there's really nothing configured, so retry briefly before
+      // reporting the error.
       let resolvedId = agentId ?? getDefaultAgentId();
-      if (!resolvedId || !getAgentDefinition(resolvedId)) {
-        // On a cold VS Code startup, the very first read of agentSessions.agents
-        // can briefly observe a stale config snapshot that self-corrects a
-        // moment later (the tree view re-renders fine once it does) — so a
-        // single failed lookup isn't proof there's really nothing configured.
-        // Give it one short beat to catch up before reporting the error.
-        await new Promise((resolve) => setTimeout(resolve, 300));
+      for (let attempt = 0; attempt < 5 && (!resolvedId || !getAgentDefinition(resolvedId)); attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
         resolvedId = agentId ?? getDefaultAgentId();
       }
       if (!resolvedId || !getAgentDefinition(resolvedId)) {
