@@ -6,6 +6,10 @@ import { TerminalPanel, VIEW_TYPE } from "./terminalPanel";
 import { TmuxServer } from "./tmux/tmuxServer";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  const output = vscode.window.createOutputChannel("Agent Sessions");
+  context.subscriptions.push(output);
+  output.appendLine(`[activate] ${new Date().toISOString()}`);
+
   const config = vscode.workspace.getConfiguration("agentSessions");
   const tmuxPath = config.get<string>("tmuxPath", "tmux");
   const tmuxFocusEvents = config.get<boolean>("tmuxFocusEvents", true);
@@ -105,7 +109,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     })
   );
 
-  registerCommands(context, store, terminalPanel);
+  registerCommands(context, store, terminalPanel, output);
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event) => {
@@ -114,6 +118,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         store.poller.start(intervalMs);
       }
       if (event.affectsConfiguration("agentSessions.agents") || event.affectsConfiguration("agentSessions.defaultAgentId")) {
+        output.appendLine(`[onDidChangeConfiguration] ${new Date().toISOString()} agents/defaultAgentId changed`);
         treeProvider.refresh();
       }
     })
