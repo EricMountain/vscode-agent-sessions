@@ -35,6 +35,9 @@ export interface TmuxSessionInfo {
   exitCode: number | undefined;
   title: string;
   created: number;
+  // Unix seconds the pane died, from tmux's own `pane_dead_time`; undefined
+  // if alive or if the running tmux version doesn't report it.
+  deadAt: number | undefined;
 }
 
 function execFileAsync(command: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
@@ -109,6 +112,7 @@ export class TmuxServer {
       "#{pane_dead_status}",
       "#{pane_title}",
       "#{session_created}",
+      "#{pane_dead_time}",
     ].join(FIELD_SEP);
     let stdout: string;
     try {
@@ -122,7 +126,7 @@ export class TmuxServer {
       if (!line.trim()) {
         continue;
       }
-      const [tmuxName, agentId, workspace, deadFlag, exitStatus, title, created] = line.split(FIELD_SEP);
+      const [tmuxName, agentId, workspace, deadFlag, exitStatus, title, created, deadTime] = line.split(FIELD_SEP);
       if (!tmuxName?.startsWith("ag_")) {
         continue;
       }
@@ -139,6 +143,7 @@ export class TmuxServer {
         exitCode: dead && exitStatus !== "" ? Number(exitStatus) : undefined,
         title: title ?? "",
         created: Number(created) || 0,
+        deadAt: dead && deadTime ? Number(deadTime) || undefined : undefined,
       });
     }
     sessions.sort((a, b) => a.created - b.created);
