@@ -18,37 +18,20 @@ function resolveSessionId(target: SessionTreeItem | string | undefined, store: S
 export function registerCommands(
   context: vscode.ExtensionContext,
   store: SessionStore,
-  terminalPanel: TerminalPanel,
-  output: vscode.OutputChannel
+  terminalPanel: TerminalPanel
 ): void {
   context.subscriptions.push(
-    vscode.commands.registerCommand("agentSessions.newSession", async (agentId?: string) => {
-      // Diagnosing an intermittent "No agents are configured" report on this
-      // exact command (occurs on the toolbar "+" far more than via other
-      // entry points that resolve to the same call with the same arguments).
-      // Log the raw config on every invocation so the next failure has real
-      // evidence attached instead of another guess.
-      const config = vscode.workspace.getConfiguration("agentSessions");
-      const rawAgents = config.get("agents");
-      const rawDefaultAgentId = config.get("defaultAgentId");
-      output.appendLine(
-        `[newSession] ${new Date().toISOString()} agentId=${agentId ?? "<none>"} ` +
-          `rawDefaultAgentId=${JSON.stringify(rawDefaultAgentId)} ` +
-          `rawAgentIds=${JSON.stringify((rawAgents as { id?: string }[] | undefined)?.map((a) => a?.id))}`
-      );
-
-      let resolvedId = agentId ?? getDefaultAgentId();
-      for (let attempt = 0; attempt < 5 && (!resolvedId || !getAgentDefinition(resolvedId)); attempt++) {
-        output.appendLine(
-          `[newSession]   attempt ${attempt}: resolvedId=${JSON.stringify(resolvedId)} found=${Boolean(
-            resolvedId && getAgentDefinition(resolvedId)
-          )}, retrying in 200ms`
-        );
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        resolvedId = agentId ?? getDefaultAgentId();
-      }
+    // The view/title toolbar button for this command has no associated tree
+    // item, but VS Code still forwards the tree view's *current selection* as
+    // the first argument whenever one exists (the same plumbing used for
+    // item-scoped commands) — so once any session row has been selected,
+    // this fires with that SessionTreeItem instead of undefined. Only trust
+    // a real string id (as passed explicitly by the per-agent "New session"
+    // rows); anything else means "no explicit agent requested".
+    vscode.commands.registerCommand("agentSessions.newSession", async (arg?: string | SessionTreeItem) => {
+      const explicitAgentId = typeof arg === "string" ? arg : undefined;
+      const resolvedId = explicitAgentId ?? getDefaultAgentId();
       if (!resolvedId || !getAgentDefinition(resolvedId)) {
-        output.appendLine(`[newSession] FAILED: resolvedId=${JSON.stringify(resolvedId)}, giving up`);
         void vscode.window.showErrorMessage("No agents are configured. Add one via the \"Configure Agents\" gear icon.");
         return;
       }
