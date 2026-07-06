@@ -18,10 +18,20 @@ export class SessionStore implements vscode.Disposable {
   // failed) before it's automatically killed and removed.
   private static readonly EXIT_GRACE_MS = 2500;
 
+  // Dead sessions belonging to some other workspace (e.g. a window that was
+  // closed before its own EXIT_GRACE_MS reap ran, or crashed outright) never
+  // show up in this store's own poll and so never hit reconcileExits. Sweep
+  // for those separately, on a much longer cadence since it's just cleanup.
+  // The grace period here is purely to avoid racing a *currently open*
+  // window for that workspace that's mid-way through its own EXIT_GRACE_MS.
+  private static readonly ORPHAN_GRACE_SEC = 30;
+  private static readonly ORPHAN_SWEEP_INTERVAL_MS = 60_000;
+
   private sessions: SessionState[] = [];
   private activeId: string | undefined;
   private readonly notifiedExits = new Set<string>();
   private readonly pendingRemoval = new Map<string, ReturnType<typeof setTimeout>>();
+  private orphanSweepTimer: ReturnType<typeof setInterval> | undefined;
   private readonly onDidChangeSessionsEmitter = new vscode.EventEmitter<SessionState[]>();
   private readonly onDidChangeActiveEmitter = new vscode.EventEmitter<string | undefined>();
   readonly onDidChangeSessions = this.onDidChangeSessionsEmitter.event;
@@ -42,6 +52,26 @@ export class SessionStore implements vscode.Disposable {
     const initial = await this.poller.poll();
     this.handlePollUpdate(initial);
     this.poller.start(intervalMs);
+
+    void this.reapOrphanedSessions();
+    this.orphanSweepTimer = setInterval(() => void this.reapOrphanedSessions(), SessionStore.ORPHAN_SWEEP_INTERVAL_MS);
+  }
+
+  // Cleans up dead tmux sessions left behind by workspaces no window is
+  // polling anymore (closed, crashed, or reloaded before its own reap timer
+  // fired). Sessions belonging to a workspace that's still open are left
+  // alone here — that window's own reconcileExits handles them promptly.
+  private async reapOrphanedSessions(): Promise<void> {
+    const all = await this.tmux.listSessions();
+    const nowSec = Date.now() / 1000;
+    const orphans = all.filter(
+      (s) =>
+        s.dead &&
+        s.workspace !== this.workspaceKey &&
+        s.deadAt !== undefined &&
+        nowSec - s.deadAt > SessionStore.ORPHAN_GRACE_SEC
+    );
+    await Promise.all(orphans.map((s) => this.tmux.killSession(s.tmuxName)));
   }
 
   private handlePollUpdate(sessions: SessionState[]): void {
@@ -133,6 +163,10 @@ export class SessionStore implements vscode.Disposable {
 
   dispose(): void {
     this.poller.dispose();
+    if (this.orphanSweepTimer) {
+      clearInterval(this.orphanSweepTimer);
+      this.orphanSweepTimer = undefined;
+    }
     for (const timer of this.pendingRemoval.values()) {
       clearTimeout(timer);
     }
