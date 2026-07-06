@@ -21,17 +21,16 @@ export function registerCommands(
   terminalPanel: TerminalPanel
 ): void {
   context.subscriptions.push(
-    vscode.commands.registerCommand("agentSessions.newSession", async (agentId?: string) => {
-      let resolvedId = agentId ?? getDefaultAgentId();
-      if (!resolvedId || !getAgentDefinition(resolvedId)) {
-        // On a cold VS Code startup, the very first read of agentSessions.agents
-        // can briefly observe a stale config snapshot that self-corrects a
-        // moment later (the tree view re-renders fine once it does) — so a
-        // single failed lookup isn't proof there's really nothing configured.
-        // Give it one short beat to catch up before reporting the error.
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        resolvedId = agentId ?? getDefaultAgentId();
-      }
+    // The view/title toolbar button for this command has no associated tree
+    // item, but VS Code still forwards the tree view's *current selection* as
+    // the first argument whenever one exists (the same plumbing used for
+    // item-scoped commands) — so once any session row has been selected,
+    // this fires with that SessionTreeItem instead of undefined. Only trust
+    // a real string id (as passed explicitly by the per-agent "New session"
+    // rows); anything else means "no explicit agent requested".
+    vscode.commands.registerCommand("agentSessions.newSession", async (arg?: string | SessionTreeItem) => {
+      const explicitAgentId = typeof arg === "string" ? arg : undefined;
+      const resolvedId = explicitAgentId ?? getDefaultAgentId();
       if (!resolvedId || !getAgentDefinition(resolvedId)) {
         void vscode.window.showErrorMessage("No agents are configured. Add one via the \"Configure Agents\" gear icon.");
         return;
