@@ -74,7 +74,7 @@ settings under `agentSessions.*` (Settings UI → search "Agent Sessions", or
 edit `settings.json` directly):
 
 | Setting | Default | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `agentSessions.agents` | Claude Code, Codex, opencode, pi | Array of `{ id, label, command, args?, icon?, iconPath?, cwd?, env? }`. `icon` is a codicon id (e.g. `"terminal"`, `"rocket"`); `iconPath` (absolute, `~`-relative, or workspace-relative path to an svg/png/etc.) overrides it with a custom image. |
 | `agentSessions.defaultAgentId` | `"claude-code"` | Id of the agent launched by the toolbar "+" and by `New Agent Session` when invoked with no explicit agent. Pick a specific type instead via the "New session" rows at the bottom of the session list. |
 | `agentSessions.followTerminalTitle` | `true` | Derive the session label from the agent's own terminal title (OSC 0/2) instead of a static `"<label> N"` name. |
