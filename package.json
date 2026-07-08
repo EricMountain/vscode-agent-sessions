@@ -244,6 +244,11 @@
           "type": "number",
           "default": 0,
           "description": "Font size (in pixels) for the terminal pane. When 0, inherits VS Code's terminal font size (terminal.integrated.fontSize), falling back to the editor font size (editor.fontSize)."
+        },
+        "agentSessions.coalesceCursorRedraws": {
+          "type": "boolean",
+          "default": true,
+          "description": "Coalesce rapid terminal cursor show/hide escape sequences instead of forwarding each one. Some agents (e.g. Claude Code) redraw an animated status line several times a second while processing a prompt, briefly hiding and showing the real cursor on every redraw, which reads as the cursor flashing very fast. When enabled, a burst of these toggles is collapsed into a single change after a brief pause instead of flashing on every redraw. Disable to see every cursor visibility change exactly as the agent sends it."
         }
       }
     }
