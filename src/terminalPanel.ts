@@ -51,6 +51,15 @@ function resolveFontSize(): number {
   return FALLBACK_FONT_SIZE;
 }
 
+// Mirrors VS Code's own terminal.integrated.minimumContrastRatio (default
+// 4.5): some themes' ansiWhite/ansiBrightWhite are tuned for a dark terminal
+// background and become near-invisible against a light one (visible e.g. in
+// Claude's diff output), so xterm needs the same runtime contrast boost VS
+// Code's real terminal applies.
+function resolveMinimumContrastRatio(): number {
+  return vscode.workspace.getConfiguration("terminal.integrated").get<number>("minimumContrastRatio", 4.5);
+}
+
 export class TerminalPanel implements vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
   private attachPty: AttachPty | undefined;
@@ -87,9 +96,15 @@ export class TerminalPanel implements vscode.Disposable {
           event.affectsConfiguration("editor.fontFamily") ||
           event.affectsConfiguration("agentSessions.fontSize") ||
           event.affectsConfiguration("terminal.integrated.fontSize") ||
-          event.affectsConfiguration("editor.fontSize")
+          event.affectsConfiguration("editor.fontSize") ||
+          event.affectsConfiguration("terminal.integrated.minimumContrastRatio")
         ) {
-          this.postMessage({ type: "config", fontFamily: resolveFontFamily(), fontSize: resolveFontSize() });
+          this.postMessage({
+            type: "config",
+            fontFamily: resolveFontFamily(),
+            fontSize: resolveFontSize(),
+            minimumContrastRatio: resolveMinimumContrastRatio(),
+          });
         }
       })
     );
@@ -231,7 +246,12 @@ export class TerminalPanel implements vscode.Disposable {
     switch (message.type) {
       case "ready":
         this.ready = true;
-        this.postMessage({ type: "config", fontFamily: resolveFontFamily(), fontSize: resolveFontSize() });
+        this.postMessage({
+          type: "config",
+          fontFamily: resolveFontFamily(),
+          fontSize: resolveFontSize(),
+          minimumContrastRatio: resolveMinimumContrastRatio(),
+        });
         if (this.sessionId) {
           this.activate(this.sessionId);
         } else {
