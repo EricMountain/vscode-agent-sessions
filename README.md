@@ -82,6 +82,7 @@ edit `settings.json` directly):
 | `agentSessions.tmuxPath` | `"tmux"` | Path to the tmux binary, if not on `PATH`. |
 | `agentSessions.pollIntervalMs` | `1500` | Background poll interval for session state/title updates (also polls on window focus and when the view becomes visible). |
 | `agentSessions.fontFamily` | `""` | Terminal pane font. Empty inherits `terminal.integrated.fontFamily`, then `editor.fontFamily`, then falls back to `\"CaskaydiaCove Nerd Font Mono\"`. Applies live — no reload needed. |
+| `agentSessions.coalesceCursorRedraws` | `true` | Collapse rapid cursor show/hide escape sequences (e.g. Claude Code's animated status line redrawing several times a second while processing) into a single change after a brief pause, instead of flashing the cursor on every redraw. Disable to forward every cursor visibility change unmodified. |
 
 ## Uninstalling / cleaning up
 

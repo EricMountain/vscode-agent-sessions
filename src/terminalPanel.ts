@@ -1,11 +1,21 @@
 import * as vscode from "vscode";
 import { AttachPty } from "./tmux/attachPty";
+import { CursorVisibilityCoalescer } from "./tmux/cursorVisibilityCoalescer";
 import { SessionStore } from "./sessionStore";
 import { ExtToWebviewMessage, WebviewToExtMessage } from "./types";
 
 export const VIEW_TYPE = "agentSessions.terminal";
 const FALLBACK_FONT_FAMILY = "CaskaydiaCove Nerd Font Mono, monospace";
 const FALLBACK_FONT_SIZE = 14;
+// How long to wait for cursor show/hide activity to go quiet before
+// forwarding the settled state, when agentSessions.coalesceCursorRedraws is
+// on. Comfortably above the ~130ms frame interval measured for Claude
+// Code's status-line spinner, so a continuous burst never gets through.
+const CURSOR_REDRAW_COALESCE_DELAY_MS = 200;
+
+function resolveCoalesceCursorRedraws(): boolean {
+  return vscode.workspace.getConfiguration("agentSessions").get<boolean>("coalesceCursorRedraws", true);
+}
 
 function resolveFontFamily(): string {
   const custom = vscode.workspace.getConfiguration("agentSessions").get<string>("fontFamily", "").trim();
@@ -44,6 +54,7 @@ function resolveFontSize(): number {
 export class TerminalPanel implements vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
   private attachPty: AttachPty | undefined;
+  private cursorCoalescer: CursorVisibilityCoalescer | undefined;
   private sessionId: string | undefined;
   private ready = false;
   private cols = 80;
@@ -260,9 +271,19 @@ export class TerminalPanel implements vscode.Disposable {
     // then tmux's own redraw) — visible as a brief flicker on switch.
     const attachPty = new AttachPty(this.tmuxPath, session.tmuxName, this.cols, this.rows);
     this.attachPty = attachPty;
+    const cursorCoalescer = new CursorVisibilityCoalescer(
+      CURSOR_REDRAW_COALESCE_DELAY_MS,
+      resolveCoalesceCursorRedraws,
+      (text) => {
+        if (this.attachPty === attachPty) {
+          this.postMessage({ type: "data", chunk: text });
+        }
+      }
+    );
+    this.cursorCoalescer = cursorCoalescer;
     attachPty.onData((chunk) => {
       if (this.attachPty === attachPty) {
-        this.postMessage({ type: "data", chunk });
+        cursorCoalescer.push(chunk);
       }
     });
     attachPty.onExit(() => {
@@ -277,6 +298,8 @@ export class TerminalPanel implements vscode.Disposable {
   private teardownAttach(): void {
     this.attachPty?.dispose();
     this.attachPty = undefined;
+    this.cursorCoalescer?.dispose();
+    this.cursorCoalescer = undefined;
   }
 
   private postMessage(message: ExtToWebviewMessage): void {
