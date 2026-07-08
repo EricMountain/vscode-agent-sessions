@@ -74,7 +74,7 @@ settings under `agentSessions.*` (Settings UI → search "Agent Sessions", or
 edit `settings.json` directly):
 
 | Setting | Default | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `agentSessions.agents` | Claude Code, Codex, opencode, pi | Array of `{ id, label, command, args?, icon?, iconPath?, cwd?, env? }`. `icon` is a codicon id (e.g. `"terminal"`, `"rocket"`); `iconPath` (absolute, `~`-relative, or workspace-relative path to an svg/png/etc.) overrides it with a custom image. |
 | `agentSessions.defaultAgentId` | `"claude-code"` | Id of the agent launched by the toolbar "+" and by `New Agent Session` when invoked with no explicit agent. Pick a specific type instead via the "New session" rows at the bottom of the session list. |
 | `agentSessions.followTerminalTitle` | `true` | Derive the session label from the agent's own terminal title (OSC 0/2) instead of a static `"<label> N"` name. |
@@ -96,6 +96,26 @@ tmux -L agent-sessions kill-server
 
 (or run `Agent Sessions: Kill All Agent Sessions` before uninstalling). The
 tmux server also exits on its own once its last session ends.
+
+## Troubleshooting
+
+### Bottom panel pops open randomly
+
+**The bottom Panel keeps popping open with a terminal while an agent is
+working, stealing focus from the Agent Sessions tab.**
+
+This extension only ever renders sessions in its own webview tab and never
+creates or reveals a native VS Code terminal.
+
+If you also have the official
+[Claude Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code)
+extension installed, check its `claudeCode.useTerminal` setting. When set to
+`true`, that extension runs the `claude` CLI in a real integrated terminal
+instead of its own native UI, and VS Code reveals the Panel group each time
+that terminal needs to run or update. For some reason (IDE integration?), that seems to interfere
+with processing of a prompt in a session run by this extension. Set
+`"claudeCode.useTerminal": false` in `settings.json` to have it use its native UI
+instead, which doesn't touch the Panel.
 
 ## More documentation
 
