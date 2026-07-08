@@ -97,6 +97,26 @@ tmux -L agent-sessions kill-server
 (or run `Agent Sessions: Kill All Agent Sessions` before uninstalling). The
 tmux server also exits on its own once its last session ends.
 
+## Troubleshooting
+
+### Bottom panel pops open randomly
+
+**The bottom Panel keeps popping open with a terminal while an agent is
+working, stealing focus from the Agent Sessions tab.**
+
+This extension only ever renders sessions in its own webview tab and never
+creates or reveals a native VS Code terminal.
+
+If you also have the official
+[Claude Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code)
+extension installed, check its `claudeCode.useTerminal` setting. When set to
+`true`, that extension runs the `claude` CLI in a real integrated terminal
+instead of its own native UI, and VS Code reveals the Panel group each time
+that terminal needs to run or update. For some reason (IDE integration?), that seems to interfere
+with processing of a prompt in a session run by this extension. Set
+`"claudeCode.useTerminal": false` in `settings.json` to have it use its native UI
+instead, which doesn't touch the Panel.
+
 ## More documentation
 
 - [docs/architecture.md](docs/architecture.md) — how sessions, tmux, and the
