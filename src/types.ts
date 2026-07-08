@@ -36,6 +36,7 @@ export interface ExtToWebviewMessage {
   chunk?: string;
   fontFamily?: string;
   fontSize?: number;
+  minimumContrastRatio?: number;
 }
 
 export type ConfigToWebviewMessage =

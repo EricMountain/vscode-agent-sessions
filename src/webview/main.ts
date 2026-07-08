@@ -160,7 +160,13 @@ const resizeObserver = new ResizeObserver(() => {
 resizeObserver.observe(container);
 
 window.addEventListener("message", (event) => {
-  const message = event.data as { type: string; chunk?: string; fontFamily?: string; fontSize?: number };
+  const message = event.data as {
+    type: string;
+    chunk?: string;
+    fontFamily?: string;
+    fontSize?: number;
+    minimumContrastRatio?: number;
+  };
   switch (message.type) {
     case "config": {
       let changed = false;
@@ -171,6 +177,9 @@ window.addEventListener("message", (event) => {
       if (message.fontSize) {
         term.options.fontSize = message.fontSize;
         changed = true;
+      }
+      if (message.minimumContrastRatio !== undefined) {
+        term.options.minimumContrastRatio = message.minimumContrastRatio;
       }
       if (changed) {
         fitAddon.fit();
