@@ -33,7 +33,7 @@ export class SessionStore implements vscode.Disposable {
   private readonly pendingRemoval = new Map<string, ReturnType<typeof setTimeout>>();
   private orphanSweepTimer: ReturnType<typeof setInterval> | undefined;
   private readonly onDidChangeSessionsEmitter = new vscode.EventEmitter<SessionState[]>();
-  private readonly onDidChangeActiveEmitter = new vscode.EventEmitter<string | undefined>();
+  private readonly onDidChangeActiveEmitter = new vscode.EventEmitter<{ id: string | undefined; reveal: boolean }>();
   readonly onDidChangeSessions = this.onDidChangeSessionsEmitter.event;
   readonly onDidChangeActive = this.onDidChangeActiveEmitter.event;
   readonly poller: SessionPoller;
@@ -77,7 +77,11 @@ export class SessionStore implements vscode.Disposable {
   private handlePollUpdate(sessions: SessionState[]): void {
     this.sessions = sessions;
     if (this.activeId && !sessions.some((s) => s.id === this.activeId)) {
-      this.setActive(sessions[0]?.id);
+      // The previously-active session vanished from this poll (exited and got
+      // reaped, most likely) rather than the user picking something else, so
+      // don't yank the terminal panel to the front of whatever tab they're
+      // actually looking at - just keep the model in sync.
+      this.setActive(sessions[0]?.id, { reveal: false });
     }
     this.reconcileExits(sessions);
     this.onDidChangeSessionsEmitter.fire(this.sessions);
@@ -123,13 +127,13 @@ export class SessionStore implements vscode.Disposable {
     return this.activeId;
   }
 
-  setActive(id: string | undefined): void {
+  setActive(id: string | undefined, options?: { reveal?: boolean }): void {
     if (this.activeId === id) {
       return;
     }
     this.activeId = id;
     void this.context.workspaceState.update(ACTIVE_SESSION_KEY, id);
-    this.onDidChangeActiveEmitter.fire(id);
+    this.onDidChangeActiveEmitter.fire({ id, reveal: options?.reveal ?? true });
   }
 
   async createSession(agentId: string, cols = 80, rows = 24): Promise<string> {

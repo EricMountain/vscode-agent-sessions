@@ -78,7 +78,7 @@ export class TerminalPanel implements vscode.Disposable {
     private readonly store: SessionStore
   ) {
     this.disposables.push(this.onDidBecomeActiveEmitter);
-    this.disposables.push(store.onDidChangeActive((id) => this.show(id)));
+    this.disposables.push(store.onDidChangeActive(({ id, reveal }) => this.show(id, { reveal })));
     this.disposables.push(
       store.onDidChangeSessions(() => {
         if (this.sessionId && !store.getSession(this.sessionId)) {
@@ -120,7 +120,7 @@ export class TerminalPanel implements vscode.Disposable {
     }
   }
 
-  show(sessionId: string | undefined): void {
+  show(sessionId: string | undefined, options?: { reveal?: boolean }): void {
     if (!sessionId) {
       this.teardownAttach();
       this.sessionId = undefined;
@@ -143,8 +143,12 @@ export class TerminalPanel implements vscode.Disposable {
     // the active tab still triggers a visible flash (and can knock focus
     // back off the webview), which shows up when e.g. opening the Agent
     // Sessions view in response to this panel regaining focus loops back
-    // here via the tree's onDidChangeVisibility handler.
-    if (!this.panel!.active) {
+    // here via the tree's onDidChangeVisibility handler. Also skip entirely
+    // when the caller says not to reveal (e.g. the store auto-promoting a
+    // new active session because the old one exited in the background) -
+    // otherwise a session finishing while the user is on an unrelated tab
+    // yanks them over to this panel unprompted.
+    if ((options?.reveal ?? true) && !this.panel!.active) {
       this.panel!.reveal(this.panel!.viewColumn, true);
     }
     this.panel!.title = session.displayName;
