@@ -27,6 +27,14 @@ export class SessionStore implements vscode.Disposable {
   private static readonly ORPHAN_GRACE_SEC = 30;
   private static readonly ORPHAN_SWEEP_INTERVAL_MS = 60_000;
 
+  // The very first poll after activation has no "last known good" list to
+  // fall back on yet (poller.lastGoodStates starts empty), so a tmux hiccup
+  // exactly at startup would otherwise be taken at face value as "zero
+  // sessions" and wipe out a remembered activeId for good. Give it a few
+  // short retries before believing that.
+  private static readonly INITIAL_POLL_RETRIES = 3;
+  private static readonly INITIAL_POLL_RETRY_DELAY_MS = 500;
+
   private sessions: SessionState[] = [];
   private activeId: string | undefined;
   private readonly notifiedExits = new Set<string>();
@@ -49,12 +57,29 @@ export class SessionStore implements vscode.Disposable {
   async start(): Promise<void> {
     const config = vscode.workspace.getConfiguration("agentSessions");
     const intervalMs = config.get<number>("pollIntervalMs", 1500);
-    const initial = await this.poller.poll();
+    const initial = await this.pollInitialWithRetry();
     this.handlePollUpdate(initial);
     this.poller.start(intervalMs);
 
     void this.reapOrphanedSessions();
     this.orphanSweepTimer = setInterval(() => void this.reapOrphanedSessions(), SessionStore.ORPHAN_SWEEP_INTERVAL_MS);
+  }
+
+  private async pollInitialWithRetry(): Promise<SessionState[]> {
+    let sessions: SessionState[] = [];
+    for (let attempt = 1; attempt <= SessionStore.INITIAL_POLL_RETRIES; attempt++) {
+      sessions = await this.poller.poll();
+      if (!this.poller.lastPollHadError) {
+        return sessions;
+      }
+      if (attempt < SessionStore.INITIAL_POLL_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, SessionStore.INITIAL_POLL_RETRY_DELAY_MS));
+      }
+    }
+    void vscode.window.showWarningMessage(
+      "Agent Sessions: couldn't reach tmux after several attempts - existing sessions may not be shown until this resolves."
+    );
+    return sessions;
   }
 
   // Cleans up dead tmux sessions left behind by workspaces no window is

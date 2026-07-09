@@ -57,6 +57,15 @@ function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
+// tmux's wording for "nobody has ever started a server on this socket" varies
+// by version/platform, but always looks like one of these two - anything else
+// (binary missing, PATH broken, permission denied, ...) is a real failure the
+// caller needs to know about rather than silently treat as "zero sessions".
+function isNoServerError(error: unknown): boolean {
+  const stderr = (error as { stderr?: string } | undefined)?.stderr ?? "";
+  return /no server running on|error connecting to/i.test(stderr);
+}
+
 export class TmuxServer {
   private readonly configPath: string;
 
@@ -117,9 +126,11 @@ export class TmuxServer {
     let stdout: string;
     try {
       ({ stdout } = await this.run(["list-sessions", "-F", format]));
-    } catch {
-      // No server running yet, or no sessions: treat as empty.
-      return [];
+    } catch (error) {
+      if (isNoServerError(error)) {
+        return [];
+      }
+      throw error;
     }
     const sessions: TmuxSessionInfo[] = [];
     for (const line of stdout.split("\n")) {
