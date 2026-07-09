@@ -27,13 +27,21 @@ export class SessionStore implements vscode.Disposable {
   private static readonly ORPHAN_GRACE_SEC = 30;
   private static readonly ORPHAN_SWEEP_INTERVAL_MS = 60_000;
 
+  // The very first poll after activation has no "last known good" list to
+  // fall back on yet (poller.lastGoodStates starts empty), so a tmux hiccup
+  // exactly at startup would otherwise be taken at face value as "zero
+  // sessions" and wipe out a remembered activeId for good. Give it a few
+  // short retries before believing that.
+  private static readonly INITIAL_POLL_RETRIES = 3;
+  private static readonly INITIAL_POLL_RETRY_DELAY_MS = 500;
+
   private sessions: SessionState[] = [];
   private activeId: string | undefined;
   private readonly notifiedExits = new Set<string>();
   private readonly pendingRemoval = new Map<string, ReturnType<typeof setTimeout>>();
   private orphanSweepTimer: ReturnType<typeof setInterval> | undefined;
   private readonly onDidChangeSessionsEmitter = new vscode.EventEmitter<SessionState[]>();
-  private readonly onDidChangeActiveEmitter = new vscode.EventEmitter<string | undefined>();
+  private readonly onDidChangeActiveEmitter = new vscode.EventEmitter<{ id: string | undefined; reveal: boolean }>();
   readonly onDidChangeSessions = this.onDidChangeSessionsEmitter.event;
   readonly onDidChangeActive = this.onDidChangeActiveEmitter.event;
   readonly poller: SessionPoller;
@@ -49,12 +57,29 @@ export class SessionStore implements vscode.Disposable {
   async start(): Promise<void> {
     const config = vscode.workspace.getConfiguration("agentSessions");
     const intervalMs = config.get<number>("pollIntervalMs", 1500);
-    const initial = await this.poller.poll();
+    const initial = await this.pollInitialWithRetry();
     this.handlePollUpdate(initial);
     this.poller.start(intervalMs);
 
     void this.reapOrphanedSessions();
     this.orphanSweepTimer = setInterval(() => void this.reapOrphanedSessions(), SessionStore.ORPHAN_SWEEP_INTERVAL_MS);
+  }
+
+  private async pollInitialWithRetry(): Promise<SessionState[]> {
+    let sessions: SessionState[] = [];
+    for (let attempt = 1; attempt <= SessionStore.INITIAL_POLL_RETRIES; attempt++) {
+      sessions = await this.poller.poll();
+      if (!this.poller.lastPollHadError) {
+        return sessions;
+      }
+      if (attempt < SessionStore.INITIAL_POLL_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, SessionStore.INITIAL_POLL_RETRY_DELAY_MS));
+      }
+    }
+    void vscode.window.showWarningMessage(
+      "Agent Sessions: couldn't reach tmux after several attempts - existing sessions may not be shown until this resolves."
+    );
+    return sessions;
   }
 
   // Cleans up dead tmux sessions left behind by workspaces no window is
@@ -77,7 +102,11 @@ export class SessionStore implements vscode.Disposable {
   private handlePollUpdate(sessions: SessionState[]): void {
     this.sessions = sessions;
     if (this.activeId && !sessions.some((s) => s.id === this.activeId)) {
-      this.setActive(sessions[0]?.id);
+      // The previously-active session vanished from this poll (exited and got
+      // reaped, most likely) rather than the user picking something else, so
+      // don't yank the terminal panel to the front of whatever tab they're
+      // actually looking at - just keep the model in sync.
+      this.setActive(sessions[0]?.id, { reveal: false });
     }
     this.reconcileExits(sessions);
     this.onDidChangeSessionsEmitter.fire(this.sessions);
@@ -123,13 +152,13 @@ export class SessionStore implements vscode.Disposable {
     return this.activeId;
   }
 
-  setActive(id: string | undefined): void {
+  setActive(id: string | undefined, options?: { reveal?: boolean }): void {
     if (this.activeId === id) {
       return;
     }
     this.activeId = id;
     void this.context.workspaceState.update(ACTIVE_SESSION_KEY, id);
-    this.onDidChangeActiveEmitter.fire(id);
+    this.onDidChangeActiveEmitter.fire({ id, reveal: options?.reveal ?? true });
   }
 
   async createSession(agentId: string, cols = 80, rows = 24): Promise<string> {

@@ -68,7 +68,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // follow it automatically (e.g. right after creating a session). Keep the
   // visible selection in sync with the active session.
   context.subscriptions.push(
-    store.onDidChangeActive((id) => {
+    store.onDidChangeActive(({ id }) => {
       if (!id) {
         return;
       }
