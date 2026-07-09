@@ -68,8 +68,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // follow it automatically (e.g. right after creating a session). Keep the
   // visible selection in sync with the active session.
   context.subscriptions.push(
-    store.onDidChangeActive(({ id }) => {
+    store.onDidChangeActive(({ id, reveal }) => {
       if (!id) {
+        return;
+      }
+      // treeView.reveal() force-SHOWS the Agent Sessions sidebar if it's
+      // currently hidden (documented behaviour) - and that visibility change
+      // then fires onDidChangeVisibility below, which reveals the terminal
+      // panel into the editor area. On a background active-change (a session
+      // exiting and auto-promoting the next one, reveal:false) that chain
+      // steals whatever editor tab the user is on, defeating the reveal:false
+      // we passed to terminalPanel.show(). Only sync the tree selection when
+      // the view is already visible, or when this is a user-driven reveal.
+      // The active "•" marker still updates regardless via the tree's own
+      // onDidChangeActive -> onDidChangeTreeData refresh.
+      if (!reveal && !treeView.visible) {
         return;
       }
       const item = treeProvider.getChildren().find((entry) => entry instanceof SessionTreeItem && entry.session.id === id);
