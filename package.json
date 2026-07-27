@@ -262,7 +262,7 @@
     "release": "scripts/release.sh"
   },
   "dependencies": {
-    "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1"
+    "@homebridge/node-pty-prebuilt-multiarch": "^0.14.1"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
