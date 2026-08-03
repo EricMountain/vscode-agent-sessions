@@ -265,7 +265,7 @@
     "@homebridge/node-pty-prebuilt-multiarch": "^0.14.1"
   },
   "devDependencies": {
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "@types/vscode": "^1.90.0",
     "@vscode/codicons": "^0.0.45",
     "@vscode/vsce": "^3.9.2",
