@@ -96,6 +96,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // and VS Code does not restore it on refocus. Remember whether the
   // terminal panel was the active one so we can re-reveal it with focus.
   let terminalWasActiveOnBlur = false;
+  // onDidChangeWindowState also fires when WindowState.active flips - VS Code
+  // marks a window "inactive" after ~a minute of no user interaction and
+  // active again on the next click, both with focused:true. Reacting to those
+  // would restore focus to the terminal panel while the user is sitting on
+  // (or just clicked) an unrelated editor tab, so only act on real focus
+  // transitions.
+  let windowFocused = vscode.window.state.focused;
   context.subscriptions.push(
     treeView.onDidChangeVisibility((event) => {
       if (event.visible) {
@@ -107,9 +114,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
     }),
     vscode.window.onDidChangeWindowState((state) => {
+      if (state.focused === windowFocused) {
+        return;
+      }
+      windowFocused = state.focused;
       if (state.focused) {
         void store.poller.poll();
         if (terminalWasActiveOnBlur) {
+          // One-shot: the panel may well not be the active tab by the time
+          // the window next loses focus, and a stale flag here is exactly
+          // what makes the panel steal focus back later.
+          terminalWasActiveOnBlur = false;
           terminalPanel.restoreFocus();
         }
       } else {

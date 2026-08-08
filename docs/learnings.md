@@ -178,6 +178,36 @@ a silent no-op; the CLI just runs standalone with no IDE context, no
 error. `TmuxServer` never talks to this server directly — it only shapes
 the CLI's environment so the CLI's own client logic can find it.
 
+### `onDidChangeWindowState` is not just a focus event
+
+**Symptom:** while sitting on an ordinary editor tab, focus would jump back
+to the agent terminal tab roughly 70 seconds later. Once that had happened,
+clicking a different tab appeared to do nothing (or switched for one frame
+and snapped back); a second click worked.
+
+**Cause:** `WindowState` carries `active` as well as `focused`, and
+`onDidChangeWindowState` fires for changes to *either*. VS Code's user
+activity tracker flips `active` to false after roughly a minute of no
+interaction (30s sampling intervals, hence "~70 seconds", not a round
+number) and back to true on the next interaction — both delivered with
+`focused: true`. `extension.ts` read those as "the window regained focus"
+and ran its refocus branch, which calls `TerminalPanel.restoreFocus()`.
+The trigger was `terminalWasActiveOnBlur` never being cleared: once the
+user had alt-tabbed away while the terminal panel was the active tab, the
+flag stayed true forever. The idle transition then stole focus, and the
+click that was supposed to switch tabs was itself the interaction that
+flipped `active` back to true, firing another event that immediately undid
+the switch. The second click fired no event (the window was already
+active), so it stuck — which is what made it look like a tab-switching bug
+rather than a focus bug.
+
+**Fix:** track the previous `focused` value and ignore any event where it
+didn't change, so pure `active` transitions are no-ops; and make
+`terminalWasActiveOnBlur` one-shot, cleared when the focus restore it
+describes actually happens. Anything keying off this event that means
+"window focus" specifically has to do the edge detection itself — the API
+gives no way to subscribe to `focused` alone.
+
 ## Testing VS Code with Playwright
 
 ### The "temporarily disabled" banner is not workspace trust
