@@ -266,7 +266,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
-    "@types/vscode": "^1.90.0",
+    "@types/vscode": "^1.134.0",
     "@vscode/codicons": "^0.0.45",
     "@vscode/vsce": "^3.9.2",
     "@xterm/addon-fit": "^0.11.0",
