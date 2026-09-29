@@ -20,6 +20,10 @@ function bootstrapConfig(focusEvents: boolean, mouse: boolean): string {
     "set-option -g status off",
     "set-option -g history-limit 10000",
     "set-option -g remain-on-exit on",
+    // Forward OSC 52 copies (tmux's own and the agents') to the webview's
+    // ClipboardAddon, which writes them to the system clipboard.
+    "set-option -g set-clipboard on",
+    "set-option -g allow-passthrough on",
     `set-option -g focus-events ${focusEvents ? "on" : "off"}`,
     `set-option -g mouse ${mouse ? "on" : "off"}`,
     "",
