@@ -1,4 +1,5 @@
 import { Terminal, ITheme } from "@xterm/xterm";
+import { ClipboardAddon } from "@xterm/addon-clipboard";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { WebglAddon } from "@xterm/addon-webgl";
@@ -71,8 +72,14 @@ const term = new Terminal({
   fontSize: 13,
   scrollback: 10000,
   allowProposedApi: true,
+  // Without this, Option-drag can't override an app's mouse reporting (pi,
+  // codex) to make a native selection; on macOS xterm ignores Shift for that.
+  macOptionClickForcesSelection: true,
   theme: buildXtermTheme(),
 });
+// Handles OSC 52 so copies made by tmux (mouse mode) or by agents reach the
+// system clipboard instead of being silently dropped.
+term.loadAddon(new ClipboardAddon());
 const fitAddon = new FitAddon();
 term.loadAddon(fitAddon);
 
