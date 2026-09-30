@@ -131,6 +131,27 @@ try {
 
 fitAddon.fit();
 
+// xterm.js doesn't implement modifyOtherKeys / the kitty keyboard protocol, so
+// Shift+Enter is indistinguishable from Enter (both send \r) and tmux's
+// `extended-keys` has nothing to pass through. Send the CSI u encoding
+// ourselves; tmux parses it from the outer terminal unconditionally and
+// forwards it to apps (pi, etc.) that asked for extended keys.
+term.attachCustomKeyEventHandler((event) => {
+  if (
+    event.key === "Enter" &&
+    event.shiftKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.metaKey
+  ) {
+    if (event.type === "keydown") {
+      vscode.postMessage({ type: "input", data: "\x1b[13;2u" });
+    }
+    return false;
+  }
+  return true;
+});
+
 term.onData((data) => {
   vscode.postMessage({ type: "input", data });
 });
