@@ -89,14 +89,13 @@ tmux only *applies* `-f` when that invocation is the one that boots the
 server — for an already-running server it's silently ignored, which makes
 it safe to pass unconditionally instead of special-casing "first call".
 
-The config sets:
-```
-set-option -g status off
-set-option -g history-limit 10000
-set-option -g remain-on-exit on
-```
+The file's contents come verbatim from the user-editable
+`agentSessions.tmuxConfig` setting (its default lives in `package.json`) and
+are rewritten on every change, but only take effect when tmux next boots its
+server. The default sets `status`, `history-limit`, `remain-on-exit`,
+`focus-events`, `mouse`, `set-clipboard` and `allow-passthrough`.
 
-`remain-on-exit` is load-bearing, not cosmetic — see
+`remain-on-exit on` is load-bearing, not cosmetic — see
 [learnings.md](learnings.md#tmux-remain-on-exit-is-load-bearing).
 
 ## Lifecycle
