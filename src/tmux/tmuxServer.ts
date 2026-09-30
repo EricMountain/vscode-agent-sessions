@@ -7,29 +7,6 @@ import { AgentDefinition } from "../types";
 export const SOCKET_NAME = "agent-sessions";
 const FIELD_SEP = "\x1f";
 
-// Applied only when this invocation is the one that boots the tmux server
-// (tmux ignores -f for an already-running server), so every session gets a
-// consistent baseline without a separate configuration RPC.
-//
-// remain-on-exit is load-bearing: without it a session whose command exits
-// immediately (bad command, wrong args) destroys itself before we can read
-// back its metadata or surface the failure, and a fast-exiting agent races
-// the `set-option` calls that tag a freshly created session.
-function bootstrapConfig(focusEvents: boolean, mouse: boolean): string {
-  return [
-    "set-option -g status off",
-    "set-option -g history-limit 10000",
-    "set-option -g remain-on-exit on",
-    // Forward OSC 52 copies (tmux's own and the agents') to the webview's
-    // ClipboardAddon, which writes them to the system clipboard.
-    "set-option -g set-clipboard on",
-    "set-option -g allow-passthrough on",
-    `set-option -g focus-events ${focusEvents ? "on" : "off"}`,
-    `set-option -g mouse ${mouse ? "on" : "off"}`,
-    "",
-  ].join("\n");
-}
-
 export interface TmuxSessionInfo {
   tmuxName: string;
   id: string;
@@ -73,10 +50,18 @@ function isNoServerError(error: unknown): boolean {
 export class TmuxServer {
   private readonly configPath: string;
 
-  constructor(private tmuxPath: string, storageDir: string, focusEvents: boolean, mouse: boolean) {
+  // The config text is user-editable (agentSessions.tmuxConfig). tmux applies
+  // it only when this invocation boots the server (`-f` is ignored for an
+  // already-running server), so edits take effect on the next server start.
+  // Note remain-on-exit is load-bearing, see docs/learnings.md.
+  constructor(private tmuxPath: string, storageDir: string, configText: string) {
     fs.mkdirSync(storageDir, { recursive: true });
     this.configPath = path.join(storageDir, "tmux.conf");
-    fs.writeFileSync(this.configPath, bootstrapConfig(focusEvents, mouse), "utf8");
+    this.writeConfig(configText);
+  }
+
+  writeConfig(configText: string): void {
+    fs.writeFileSync(this.configPath, configText.endsWith("\n") ? configText : configText + "\n", "utf8");
   }
 
   private run(args: string[]): Promise<{ stdout: string; stderr: string }> {

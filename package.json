@@ -224,16 +224,12 @@
           "default": 1500,
           "description": "How often (in milliseconds) to poll tmux for background session state and title changes."
         },
-        "agentSessions.tmuxFocusEvents": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable tmux's focus-events option for agent sessions, so agents running inside them (e.g. Claude Code) can detect whether the pane is focused. Applies only to this extension's own tmux server, not your ~/.tmux.conf."
-        },
-        "agentSessions.tmuxMouse": {
-          "type": "boolean",
-          "title": "Tmux Mouse Mode",
-          "default": false,
-          "description": "Enable tmux's mouse option for agent sessions, so the mouse wheel scrolls the pane and agents running inside them (e.g. Claude Code) don't show a hint about it being off. When enabled, click-drag in the terminal is captured for tmux/app mouse reporting instead of text selection; hold Shift while dragging to select and copy text. Applies only to this extension's own tmux server, not your ~/.tmux.conf."
+        "agentSessions.tmuxConfig": {
+          "type": "string",
+          "title": "Tmux Config",
+          "editPresentation": "multilineText",
+          "default": "# Applied only when the tmux server starts. Edit, then restart tmux (see setting description).\nset-option -g status off\nset-option -g history-limit 10000\nset-option -g remain-on-exit on\nset-option -g focus-events on\n# mouse on is necessary for scrollback to work in pi/codex\nset-option -g mouse on\n# Forward OSC 52 copies (tmux's own and the agents') to the terminal view's clipboard handler.\nset-option -g set-clipboard on\nset-option -g allow-passthrough on\n# Flicker avoidance test\nset-option -as terminal-features ',xterm*:sync'\n",
+          "markdownDescription": "Contents of the tmux config file used by this extension's own tmux server (not your `~/.tmux.conf`). Saved automatically on every change.\n\n**Changes only take effect when tmux restarts.** tmux reads this file only when it boots its server. To force a restart, end every session with **Agent Sessions: Kill All Agent Sessions** (the server exits when its last session ends), or run `tmux -L agent-sessions kill-server` in a terminal. Either way all running agents are terminated.\n\nThe file is written to `<VS Code user data>/User/globalStorage/eric-mountain.agent-terminal-sessions/tmux.conf` (on macOS: `~/Library/Application Support/Code/User/globalStorage/...`). Don't edit it there: it is overwritten from this setting.\n\nBasic options:\n\n- `status` — tmux's status bar. Recommended: `off`; the extension shows session info in its own UI.\n- `history-limit` — lines of scrollback tmux keeps per pane. Recommended: `10000`.\n- `remain-on-exit` — keep a pane after its command exits. Recommended: `on`. **Keep this on**: without it, an agent that exits immediately destroys its own session before the extension can read the failure.\n- `focus-events` — lets agents (e.g. Claude Code) know whether the pane is focused. Recommended: `on`.\n- `mouse` — tmux captures the mouse (wheel scrolls, drag selects in tmux). Default: `on`, which scrollback in pi/codex needs. Drags are then captured by tmux or the agent; hold Option (macOS) or Shift while dragging to force a native selection.\n- `set-clipboard` / `allow-passthrough` — recommended `on`; let copies made by tmux or agents (OSC 52) reach the system clipboard."
         },
         "agentSessions.fontFamily": {
           "type": "string",

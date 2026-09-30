@@ -18,7 +18,7 @@ npx esbuild src/tmux/tmuxServer.ts --bundle --platform=node --format=cjs \
 node -e '
   const { TmuxServer } = require("./.tmp/tmuxServer.test.js");
   (async () => {
-    const tmux = new TmuxServer("tmux", ".tmp/storage");
+    const tmux = new TmuxServer("tmux", ".tmp/storage", "set-option -g remain-on-exit on");
     const agent = { id: "x", label: "X", command: "bash", args: ["-c", "echo hi; sleep 60"] };
     const { tmuxName } = await tmux.createSession(agent, process.cwd(), "ws1", 80, 24);
     console.log(await tmux.listSessions("ws1"));

@@ -8,9 +8,7 @@ import { TmuxServer } from "./tmux/tmuxServer";
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const config = vscode.workspace.getConfiguration("agentSessions");
   const tmuxPath = config.get<string>("tmuxPath", "tmux");
-  const tmuxFocusEvents = config.get<boolean>("tmuxFocusEvents", true);
-  const tmuxMouse = config.get<boolean>("tmuxMouse", false);
-  const tmux = new TmuxServer(tmuxPath, context.globalStorageUri.fsPath, tmuxFocusEvents, tmuxMouse);
+  const tmux = new TmuxServer(tmuxPath, context.globalStorageUri.fsPath, config.get<string>("tmuxConfig", ""));
 
   const available = await tmux.isAvailable();
   await vscode.commands.executeCommand("setContext", "agentSessions.tmuxAvailable", available);
@@ -140,6 +138,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (event.affectsConfiguration("agentSessions.pollIntervalMs")) {
         const intervalMs = vscode.workspace.getConfiguration("agentSessions").get<number>("pollIntervalMs", 1500);
         store.poller.start(intervalMs);
+      }
+      if (event.affectsConfiguration("agentSessions.tmuxConfig")) {
+        tmux.writeConfig(vscode.workspace.getConfiguration("agentSessions").get<string>("tmuxConfig", ""));
       }
       if (event.affectsConfiguration("agentSessions.agents") || event.affectsConfiguration("agentSessions.defaultAgentId")) {
         treeProvider.refresh();
